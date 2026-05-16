@@ -1,0 +1,1249 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>情绪识别 · 机器人LED点阵表情屏</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg0:#05060a;
+      --bg1:#070a14;
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.09);
+      --stroke: rgba(255,255,255,.12);
+      --text: rgba(255,255,255,.86);
+      --muted: rgba(255,255,255,.62);
+      --neon-cyan:#18f7ff;
+      --neon-mag:#ff3bf5;
+      --neon-lime:#b6ff4a;
+      --danger:#ff2f62;
+      --warn:#ffb02e;
+      --ok:#6bffb6;
+      --shadow: 0 18px 60px rgba(0,0,0,.55);
+      --radius: 18px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Outfit", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 18% 15%, rgba(24,247,255,.16), transparent 55%),
+        radial-gradient(900px 700px at 85% 10%, rgba(255,59,245,.14), transparent 55%),
+        radial-gradient(900px 700px at 70% 80%, rgba(182,255,74,.10), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    /* subtle noise */
+    body:before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.08;
+      background-image:
+        repeating-radial-gradient(circle at 20% 20%, rgba(255,255,255,.04) 0 1px, transparent 1px 6px),
+        repeating-radial-gradient(circle at 70% 60%, rgba(255,255,255,.03) 0 1px, transparent 1px 7px);
+      mix-blend-mode:overlay;
+      filter: blur(.2px);
+    }
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:28px 18px 42px;
+    }
+
+    header{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:18px;
+      padding:10px 6px 18px;
+    }
+
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .brand .title{
+      font-size:20px;
+      letter-spacing:.3px;
+      font-weight:700;
+    }
+
+    .brand .subtitle{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+      max-width:52ch;
+    }
+
+    .badge{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border:1px solid var(--stroke);
+      border-radius:999px;
+      background:linear-gradient(135deg, rgba(255,255,255,.09), rgba(255,255,255,.03));
+      box-shadow: 0 12px 35px rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+      color: rgba(255,255,255,.78);
+      font-size:13px;
+      white-space:nowrap;
+    }
+
+    .badge .dot{
+      width:8px;height:8px;border-radius:999px;
+      background:var(--neon-cyan);
+      box-shadow: 0 0 18px rgba(24,247,255,.55);
+      animation:pulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes pulse{
+      0%,100%{transform:scale(1);opacity:.9}
+      50%{transform:scale(1.35);opacity:1}
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:18px;
+    }
+
+    @media (max-width: 980px){
+      header{align-items:flex-start;flex-direction:column}
+      .badge{width:fit-content}
+    }
+
+    .panel{
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.035));
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .inputPanel{
+      padding:18px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .inputPanel:before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:
+        radial-gradient(700px 320px at 15% 30%, rgba(24,247,255,.16), transparent 55%),
+        radial-gradient(600px 320px at 90% 20%, rgba(255,59,245,.14), transparent 55%);
+      opacity:.9;
+      filter: blur(2px);
+      pointer-events:none;
+      mask: linear-gradient(180deg, rgba(0,0,0,.75), transparent 80%);
+    }
+
+    .inputPanel > *{position:relative}
+
+    label{
+      display:block;
+      font-size:13px;
+      color:rgba(255,255,255,.72);
+      margin-bottom:8px;
+      letter-spacing:.2px;
+    }
+
+    textarea{
+      width:100%;
+      min-height:140px;
+      resize:vertical;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.35);
+      color:var(--text);
+      padding:14px 14px;
+      outline:none;
+      line-height:1.55;
+      font-size:14px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
+    }
+
+    textarea:focus{
+      border-color: rgba(24,247,255,.45);
+      box-shadow: 0 0 0 4px rgba(24,247,255,.12), inset 0 0 0 1px rgba(0,0,0,.25);
+    }
+
+    .row{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      border:0;
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor:pointer;
+      color: rgba(0,0,0,.92);
+      font-weight:700;
+      letter-spacing:.2px;
+      background: linear-gradient(135deg, var(--neon-cyan), rgba(182,255,74,.95));
+      box-shadow: 0 12px 30px rgba(24,247,255,.18), 0 12px 28px rgba(182,255,74,.10);
+      transition: transform .15s ease, filter .15s ease;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .btn:hover{transform: translateY(-1px); filter:saturate(1.06)}
+    .btn:active{transform: translateY(0px) scale(.99)}
+
+    .btn.secondary{
+      background: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
+      color: rgba(255,255,255,.86);
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: none;
+      font-weight:600;
+    }
+
+    .chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:14px;
+    }
+
+    .chip{
+      font-size:12px;
+      color: rgba(255,255,255,.78);
+      border: 1px solid rgba(255,255,255,.13);
+      background: rgba(0,0,0,.25);
+      padding:8px 10px;
+      border-radius:999px;
+      cursor:pointer;
+      transition: transform .15s ease, border-color .15s ease;
+      user-select:none;
+    }
+    .chip:hover{transform: translateY(-1px); border-color: rgba(24,247,255,.35)}
+
+    .hint{
+      margin-top:10px;
+      color: var(--muted);
+      font-size:12px;
+      line-height:1.5;
+    }
+
+    .displayPanel{
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .status{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .status .emotion{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:15px;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+
+    .pill{
+      padding:8px 10px;
+      border-radius:999px;
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.14);
+      color: rgba(255,255,255,.78);
+      font-size:12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .legend{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .legend .mini{
+      width:8px;height:8px;border-radius:99px;
+      background: var(--neon-cyan);
+      box-shadow: 0 0 18px rgba(24,247,255,.4);
+    }
+
+    .screenWrap{
+      position:relative;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: radial-gradient(900px 500px at 35% 20%, rgba(24,247,255,.10), transparent 60%), rgba(0,0,0,.45);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.5), 0 18px 70px rgba(0,0,0,.55);
+      overflow:hidden;
+      aspect-ratio: 16 / 9;
+      min-height: 520px;
+    }
+
+    canvas{
+      width:100%;
+      height:100%;
+      display:block;
+    }
+
+    /* scanlines + glow glass */
+    .screenWrap:before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,.06) 0px,
+          rgba(255,255,255,.02) 1px,
+          rgba(0,0,0,0) 3px,
+          rgba(0,0,0,0) 6px
+        );
+      opacity:.22;
+      mix-blend-mode:overlay;
+    }
+
+    .screenWrap:after{
+      content:"";
+      position:absolute;
+      inset:-40% 0 0 0;
+      pointer-events:none;
+      background: linear-gradient(to bottom, transparent, rgba(24,247,255,.11), transparent);
+      transform: translateY(-60%);
+      animation: sweep 3.2s linear infinite;
+      opacity:.55;
+      mix-blend-mode:screen;
+    }
+
+    @keyframes sweep{
+      0%{transform: translateY(-60%)}
+      100%{transform: translateY(160%)}
+    }
+
+    .footer{
+      margin-top:16px;
+      color: rgba(255,255,255,.55);
+      font-size:12px;
+      padding: 0 6px;
+      line-height:1.6;
+    }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      padding:2px 6px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,.15);
+      background: rgba(0,0,0,.35);
+      color: rgba(255,255,255,.76);
+    }
+
+    .tiny{
+      font-size:11px;
+      color: rgba(255,255,255,.52);
+    }
+
+    .shake{
+      animation: shake .35s ease-in-out 1;
+    }
+
+    @keyframes shake{
+      0%{transform: translateX(0)}
+      20%{transform: translateX(-6px)}
+      40%{transform: translateX(6px)}
+      60%{transform: translateX(-4px)}
+      80%{transform: translateX(4px)}
+      100%{transform: translateX(0)}
+    }
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="title">机器人 LED 点阵表情屏</div>
+        <div class="subtitle">输入一段 AI 生成的文字，前端用关键词/语义规则做情绪匹配，并用拟真 LED 点阵在下方显示对应“脸”。支持中英文常见表达，含扫描线、闪烁与过渡动画。</div>
+      </div>
+      <div class="badge"><span class="dot"></span><span>On-device rule engine · No backend</span></div>
+    </header>
+
+    <div class="grid">
+      <section class="panel inputPanel">
+        <label for="text">AI 文字输入</label>
+        <textarea id="text" placeholder="例如：\n- 太棒了！我们终于搞定了！\n- I feel anxious and scared about what will happen next.\n- 我不太理解你的意思，能再解释一下吗？"></textarea>
+
+        <div class="row">
+          <button class="btn" id="analyzeBtn" type="button">
+            <span>分析情绪</span>
+            <span class="tiny">Enter</span>
+          </button>
+          <button class="btn secondary" id="randomBtn" type="button">随机示例</button>
+          <div class="pill" title="点阵规模">
+            <span class="mini" style="background:var(--neon-mag); box-shadow:0 0 16px rgba(255,59,245,.35)"></span>
+            <span>LED 网格</span>
+            <span class="kbd" id="gridInfo">24×24</span>
+          </div>
+        </div>
+
+        <div class="chips" id="chips"></div>
+        <div class="hint">提示：按 <span class="kbd">Enter</span> 也可直接分析（<span class="kbd">Shift</span>+<span class="kbd">Enter</span> 换行）。页面完全在本地运行：不上传你的文本。</div>
+      </section>
+
+      <section class="panel displayPanel">
+        <div class="status">
+          <div class="emotion" id="emotionLabel">🙂 当前情绪：<span style="color:var(--muted); font-weight:600">等待分析</span></div>
+          <div class="legend">
+            <div class="pill"><span class="mini"></span><span>像素发光</span></div>
+            <div class="pill"><span class="mini" style="background:var(--neon-lime); box-shadow:0 0 16px rgba(182,255,74,.35)"></span><span>扫描线</span></div>
+            <div class="pill"><span class="mini" style="background:var(--warn); box-shadow:0 0 16px rgba(255,176,46,.35)"></span><span>轻微闪烁</span></div>
+          </div>
+        </div>
+
+        <div class="screenWrap" id="screenWrap">
+          <canvas id="screen" width="1600" height="900" aria-label="LED dot matrix" role="img"></canvas>
+        </div>
+
+        <div class="footer">
+          12 种预设表情：基础情绪（快乐/悲伤/愤怒/恐惧惊讶/厌恶）＋交互状态（专注/思考/确认/困惑）＋社交信号（眨眼/困倦/庆祝）。
+          <div class="tiny">说明：情绪分析使用前端规则引擎（关键词 + 标点语气 + 轻量语义规则），并给出一个最匹配结果。</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const SIZE = 24; // LED grid
+    const canvas = document.getElementById('screen');
+    const ctx = canvas.getContext('2d');
+    const screenWrap = document.getElementById('screenWrap');
+    const emotionLabelEl = document.getElementById('emotionLabel');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const randomBtn = document.getElementById('randomBtn');
+    const textEl = document.getElementById('text');
+    const chipsEl = document.getElementById('chips');
+
+    document.getElementById('gridInfo').textContent = `${SIZE}×${SIZE}`;
+
+    // --------- LED matrix helpers ---------
+    function makeMatrix(fill=0){
+      const m = new Array(SIZE);
+      for(let y=0;y<SIZE;y++){
+        const row = new Array(SIZE);
+        row.fill(fill);
+        m[y]=row;
+      }
+      return m;
+    }
+
+    function clamp(v,min,max){return Math.max(min, Math.min(max,v));}
+
+    function setPx(m,x,y,v=2){
+      x=Math.round(x);y=Math.round(y);
+      if(x<0||x>=SIZE||y<0||y>=SIZE) return;
+      m[y][x] = Math.max(m[y][x], v);
+    }
+
+    function drawLine(m,x0,y0,x1,y1,v=2){
+      x0=Math.round(x0);y0=Math.round(y0);x1=Math.round(x1);y1=Math.round(y1);
+      const dx=Math.abs(x1-x0), dy=Math.abs(y1-y0);
+      const sx = x0<x1?1:-1;
+      const sy = y0<y1?1:-1;
+      let err = dx - dy;
+      while(true){
+        setPx(m,x0,y0,v);
+        if(x0===x1 && y0===y1) break;
+        const e2 = 2*err;
+        if(e2>-dy){err-=dy; x0+=sx;}
+        if(e2<dx){err+=dx; y0+=sy;}
+      }
+    }
+
+    function drawCircle(m,cx,cy,r,v=2){
+      const steps = Math.max(24, Math.floor(r*18));
+      for(let i=0;i<=steps;i++){
+        const a = (i/steps)*Math.PI*2;
+        const x = cx + Math.cos(a)*r;
+        const y = cy + Math.sin(a)*r;
+        setPx(m,x,y,v);
+      }
+    }
+
+    function drawArc(m,cx,cy,r,a0,a1,v=2){
+      const steps = Math.max(16, Math.floor(r*16));
+      const dir = a1>=a0 ? 1 : -1;
+      const span = Math.abs(a1-a0);
+      for(let i=0;i<=steps;i++){
+        const a = a0 + dir*(i/steps)*span;
+        const x = cx + Math.cos(a)*r;
+        const y = cy + Math.sin(a)*r;
+        setPx(m,x,y,v);
+      }
+    }
+
+    function drawThick(m, drawFn, thickness=2){
+      // poor-man thickness: draw small offsets
+      const offsets=[];
+      const t = Math.max(1, thickness);
+      for(let oy=-t; oy<=t; oy++){
+        for(let ox=-t; ox<=t; ox++){
+          if(ox*ox+oy*oy<=t*t) offsets.push([ox,oy]);
+        }
+      }
+      const base = makeMatrix(0);
+      drawFn(base);
+      for(let y=0;y<SIZE;y++){
+        for(let x=0;x<SIZE;x++){
+          const vv = base[y][x];
+          if(vv<=0) continue;
+          for(const [ox,oy] of offsets){
+            setPx(m, x+ox, y+oy, vv);
+          }
+        }
+      }
+    }
+
+    function blendMatrices(a,b,t){
+      const out = makeMatrix(0);
+      for(let y=0;y<SIZE;y++){
+        for(let x=0;x<SIZE;x++){
+          const v = a[y][x]*(1-t) + b[y][x]*t;
+          out[y][x] = v;
+        }
+      }
+      return out;
+    }
+
+    function easeOutCubic(x){ return 1 - Math.pow(1-x,3); }
+
+    // --------- Emotions definition (12) ---------
+    const EMOTIONS = [
+      { id:'happy',  emoji:'😊', label:'快乐/友好', group:'Basic', color:'#ffef6a' },
+      { id:'sad',    emoji:'😢', label:'悲伤/同情', group:'Basic', color:'#5ad7ff' },
+      { id:'angry',  emoji:'😠', label:'愤怒/警告', group:'Basic', color:'#ff375f' },
+      { id:'fear',   emoji:'😨', label:'恐惧/惊讶', group:'Basic', color:'#bfa8ff' },
+      { id:'disgust',emoji:'🤢', label:'厌恶/拒绝', group:'Basic', color:'#8dff7a' },
+
+      { id:'focus',  emoji:'👀', label:'专注/倾听', group:'Interaction', color:'#18f7ff' },
+      { id:'think',  emoji:'🤔', label:'思考/处理中', group:'Interaction', color:'#ffb02e' },
+      { id:'confirm',emoji:'✅', label:'确认/完成', group:'Interaction', color:'#6bffb6' },
+      { id:'confuse',emoji:'❓', label:'困惑/疑问', group:'Interaction', color:'#ff8df2' },
+
+      { id:'wink',   emoji:'😉', label:'眨眼/调皮', group:'Social', color:'#ff3bf5' },
+      { id:'sleepy', emoji:'😴', label:'困倦/低电量', group:'Social', color:'#8aa0ff' },
+      { id:'party',  emoji:'🎉', label:'庆祝/兴奋', group:'Social', color:'#b6ff4a' },
+    ];
+
+    const EMOTION_BY_ID = Object.fromEntries(EMOTIONS.map(e=>[e.id,e]));
+
+    // --------- Pattern generator ---------
+    function faceBase(){
+      const m = makeMatrix(0);
+      // subtle cheeks frame
+      drawThick(m, (mm)=>{
+        drawArc(mm, 12, 12.5, 10.2, 0.15*Math.PI, 0.85*Math.PI, 1);
+        drawArc(mm, 12, 12.5, 10.2, 1.15*Math.PI, 1.85*Math.PI, 1);
+      }, 0);
+      return m;
+    }
+
+    function addEyesSmile(m){
+      drawThick(m, (mm)=>{
+        drawArc(mm, 8, 9.8, 3.1, Math.PI*0.15, Math.PI*0.85, 2);
+        drawArc(mm, 16, 9.8, 3.1, Math.PI*0.15, Math.PI*0.85, 2);
+      }, 1);
+    }
+
+    function addEyesRound(m, open=1){
+      const r = open>0.9 ? 3.2 : (open>0.55 ? 2.6 : 1.8);
+      drawThick(m, (mm)=>{
+        drawCircle(mm, 8, 10, r, 2);
+        drawCircle(mm, 16, 10, r, 2);
+      }, 0);
+      // pupils
+      if(open>0.75){
+        setPx(m,8,10,2);
+        setPx(m,16,10,2);
+      }
+    }
+
+    function addEyesFocus(m, t){
+      // iris micro movement
+      const dx = Math.round(Math.sin(t*0.0012)*1);
+      const dy = Math.round(Math.cos(t*0.0010)*1);
+      drawThick(m, (mm)=>{
+        drawCircle(mm, 8, 10, 3.2, 2);
+        drawCircle(mm, 16, 10, 3.2, 2);
+      }, 0);
+      setPx(m, 8+dx, 10+dy, 2);
+      setPx(m, 16+dx, 10+dy, 2);
+    }
+
+    function addBrowsAngry(m){
+      drawThick(m, (mm)=>{
+        drawLine(mm, 5, 6, 10, 8, 2);
+        drawLine(mm, 14, 8, 19, 6, 2);
+      }, 0);
+    }
+
+    function addBrowsSad(m){
+      drawThick(m, (mm)=>{
+        drawLine(mm, 5, 7, 10, 5, 2);
+        drawLine(mm, 14, 5, 19, 7, 2);
+      }, 0);
+    }
+
+    function addBrowsConfused(m, t){
+      const wobble = Math.round(Math.sin(t*0.0016)*1);
+      drawThick(m, (mm)=>{
+        drawLine(mm, 5, 6+wobble, 10, 5, 2);
+        drawLine(mm, 14, 5, 19, 6-wobble, 2);
+      }, 0);
+    }
+
+    function addMouthSmile(m){
+      drawThick(m, (mm)=>{
+        drawArc(mm, 12, 15.8, 6.3, Math.PI*0.15, Math.PI*0.85, 2);
+      }, 1);
+    }
+
+    function addMouthFrown(m){
+      drawThick(m, (mm)=>{
+        drawArc(mm, 12, 18.2, 6.3, Math.PI*1.15, Math.PI*1.85, 2);
+      }, 1);
+    }
+
+    function addMouthFlat(m){
+      drawThick(m, (mm)=>{
+        drawLine(mm, 8, 17, 16, 17, 2);
+      }, 1);
+    }
+
+    function addMouthOpen(m){
+      drawThick(m, (mm)=>{
+        drawCircle(mm, 12, 17, 3.3, 2);
+      }, 0);
+      // inner darkness hint
+      setPx(m,12,17,1);
+    }
+
+    function addNoseWrinkle(m){
+      drawThick(m, (mm)=>{
+        drawLine(mm, 11, 12, 13, 12, 2);
+        drawLine(mm, 10, 13, 14, 13, 1);
+      }, 0);
+    }
+
+    function addTear(m, side='left'){
+      const x = side==='left' ? 6 : 18;
+      setPx(m, x, 13, 2);
+      setPx(m, x, 14, 2);
+      setPx(m, x+1, 15, 1);
+    }
+
+    function addZzz(m, t){
+      // animated Z
+      const phase = (t*0.001) % 1;
+      const yOff = Math.round(phase*3);
+      drawThick(m, (mm)=>{
+        drawLine(mm, 17, 5+yOff, 21, 5+yOff, 1);
+        drawLine(mm, 21, 5+yOff, 17, 9+yOff, 1);
+        drawLine(mm, 17, 9+yOff, 21, 9+yOff, 1);
+      }, 0);
+    }
+
+    function addPartySparkles(m, t){
+      const tw = (v)=> (v>0.5?2:1);
+      const s1 = Math.sin(t*0.004);
+      const s2 = Math.sin(t*0.006 + 2.1);
+      const s3 = Math.sin(t*0.005 + 4.2);
+      setPx(m, 4, 6, tw((s1+1)/2));
+      setPx(m, 20, 7, tw((s2+1)/2));
+      setPx(m, 18, 4, tw((s3+1)/2));
+      setPx(m, 6, 4, tw((s2+1)/2));
+    }
+
+    function addCheckMark(m, t){
+      const blink = (Math.sin(t*0.004)+1)/2;
+      const v = blink>0.55 ? 2 : 1;
+      drawThick(m, (mm)=>{
+        drawLine(mm, 4, 18, 8, 21, v);
+        drawLine(mm, 8, 21, 14, 15, v);
+      }, 0);
+    }
+
+    function addQuestionMark(m, t){
+      const phase = (Math.sin(t*0.004)+1)/2;
+      const v = phase>0.5?2:1;
+      drawThick(m, (mm)=>{
+        drawArc(mm, 18, 6, 2.7, Math.PI*1.05, Math.PI*1.95, v);
+        drawLine(mm, 18, 8, 18, 10, v);
+      }, 0);
+      setPx(m, 18, 12, v);
+    }
+
+    function patternFor(emotionId, t){
+      const base = faceBase();
+      const m = base;
+
+      // default eye blink timing
+      const blink = (Math.sin(t*0.0032)+1)/2;
+      const blinkClosed = blink>0.84;
+
+      switch(emotionId){
+        case 'happy':
+          addEyesSmile(m);
+          addMouthSmile(m);
+          // cheek sparks
+          setPx(m, 6, 15, 1); setPx(m, 18, 15, 1);
+          break;
+
+        case 'sad':
+          addBrowsSad(m);
+          addEyesRound(m, blinkClosed?0.45:0.9);
+          addMouthFrown(m);
+          addTear(m, 'left');
+          break;
+
+        case 'angry':
+          addBrowsAngry(m);
+          // sharp eyes (slit)
+          drawThick(m, (mm)=>{
+            drawLine(mm, 6, 10, 10, 10, 2);
+            drawLine(mm, 14, 10, 18, 10, 2);
+          }, 1);
+          addMouthFlat(m);
+          // teeth hint
+          setPx(m, 10, 17, 1); setPx(m, 12, 17, 1); setPx(m, 14, 17, 1);
+          break;
+
+        case 'fear':
+          addEyesRound(m, 1);
+          addMouthOpen(m);
+          // raised brows
+          drawThick(m, (mm)=>{
+            drawArc(mm, 8, 6.5, 3.2, Math.PI*1.15, Math.PI*1.85, 2);
+            drawArc(mm, 16, 6.5, 3.2, Math.PI*1.15, Math.PI*1.85, 2);
+          }, 0);
+          // sweat drop
+          setPx(m, 20, 12, 1); setPx(m, 21, 13, 2); setPx(m, 20, 14, 1);
+          break;
+
+        case 'disgust':
+          addNoseWrinkle(m);
+          // squint eyes
+          drawThick(m, (mm)=>{
+            drawLine(mm, 6, 10, 10, 9, 2);
+            drawLine(mm, 14, 9, 18, 10, 2);
+          }, 1);
+          // crooked frown
+          drawThick(m, (mm)=>{
+            drawArc(mm, 11, 18.2, 5.5, Math.PI*1.20, Math.PI*1.65, 2);
+            drawArc(mm, 13, 18.0, 5.5, Math.PI*1.35, Math.PI*1.85, 2);
+          }, 1);
+          break;
+
+        case 'focus':
+          addEyesFocus(m, t);
+          // small neutral mouth
+          drawThick(m, (mm)=>{
+            drawLine(mm, 9, 17, 15, 17, 2);
+          }, 1);
+          // tilt hint by a side dot
+          setPx(m, 4, 12, 1);
+          break;
+
+        case 'think':
+          // eyes glance away
+          drawThick(m, (mm)=>{
+            drawCircle(mm, 8, 10, 3.0, 2);
+            drawCircle(mm, 16, 10, 3.0, 2);
+          }, 0);
+          setPx(m, 7, 11, 2);
+          setPx(m, 15, 9, 2);
+          // slight brow
+          drawThick(m, (mm)=>{
+            drawLine(mm, 5, 7, 10, 7, 2);
+            drawLine(mm, 14, 7, 19, 6, 2);
+          }, 0);
+          // thinking mouth
+          drawThick(m, (mm)=>{
+            drawLine(mm, 10, 17, 14, 16, 2);
+          }, 1);
+          // processing dots
+          const p = (t*0.006)% (Math.PI*2);
+          setPx(m, 9, 20, Math.sin(p)>0.6?2:0);
+          setPx(m, 12, 20, Math.sin(p+1.8)>0.6?2:0);
+          setPx(m, 15, 20, Math.sin(p+3.6)>0.6?2:0);
+          break;
+
+        case 'confirm':
+          // wink + smile + check
+          drawThick(m, (mm)=>{
+            // left eye wink
+            drawLine(mm, 6, 10, 10, 10, 2);
+            // right eye open blink sometimes
+            if(!blinkClosed){ drawCircle(mm, 16, 10, 3.0, 2); }
+          }, 0);
+          if(!blinkClosed){ setPx(m, 16, 10, 2); }
+          addMouthSmile(m);
+          addCheckMark(m, t);
+          break;
+
+        case 'confuse':
+          addBrowsConfused(m, t);
+          // uneven eyes
+          drawThick(m, (mm)=>{
+            drawCircle(mm, 8, 10, blinkClosed?2.0:3.0, 2);
+            drawCircle(mm, 16, 10, 3.0, 2);
+          }, 0);
+          setPx(m, 8, 10, 2);
+          setPx(m, 17, 10, 2);
+          // crooked mouth
+          drawThick(m, (mm)=>{
+            drawLine(mm, 9, 18, 15, 16, 2);
+          }, 1);
+          addQuestionMark(m, t);
+          break;
+
+        case 'wink':
+          // playful wink + smirk
+          drawThick(m, (mm)=>{
+            drawCircle(mm, 8, 10, 3.0, 2);
+            drawLine(mm, 14, 10, 18, 10, 2);
+          }, 0);
+          setPx(m, 8, 10, 2);
+          drawThick(m, (mm)=>{
+            drawArc(mm, 12, 16.6, 5.8, Math.PI*0.05, Math.PI*0.55, 2);
+          }, 1);
+          // dimple
+          setPx(m, 16, 16, 1);
+          break;
+
+        case 'sleepy':
+          // half-closed eyes
+          drawThick(m, (mm)=>{
+            drawLine(mm, 6, 10, 10, 10, 2);
+            drawLine(mm, 14, 10, 18, 10, 2);
+          }, 1);
+          // droopy lids
+          drawThick(m, (mm)=>{
+            drawLine(mm, 6, 11, 10, 12, 1);
+            drawLine(mm, 14, 12, 18, 11, 1);
+          }, 0);
+          // small mouth
+          drawThick(m, (mm)=>{
+            drawArc(mm, 12, 18, 3.4, Math.PI*1.05, Math.PI*1.95, 2);
+          }, 0);
+          addZzz(m, t);
+          break;
+
+        case 'party':
+          // big happy eyes + wide smile + sparkles
+          addEyesRound(m, 1);
+          drawThick(m, (mm)=>{
+            drawArc(mm, 12, 15.4, 7.0, Math.PI*0.10, Math.PI*0.90, 2);
+          }, 1);
+          // confetti
+          addPartySparkles(m, t);
+          setPx(m, 6, 19, 1); setPx(m, 8, 21, 2); setPx(m, 18, 20, 1);
+          break;
+
+        default:
+          addEyesRound(m, 0.9);
+          addMouthSmile(m);
+      }
+
+      return m;
+    }
+
+    // --------- Emotion analysis (rule-based, CN/EN) ---------
+    const RULES = {
+      happy: {
+        w: 1,
+        kws: [
+          '开心','高兴','快乐','幸福','太棒了','好棒','赞','喜欢','爱了','感动','谢谢','感谢','nice','great','awesome','amazing','love','happy','glad','yay','wonderful','fantastic',
+          '🎉','🥳','lol','哈哈','哈哈哈','笑死','笑哭','爽'
+        ],
+        re: [ /\bcongrats?\b/i, /\bwell\s*done\b/i, /\bthank(s|you)\b/i ]
+      },
+      sad: {
+        w: 1,
+        kws: [
+          '难过','伤心','沮丧','失落','心碎','哭','流泪','遗憾','抱歉','对不起','同情','可怜','sad','down','depressed','upset','sorry','regret','miss','lonely'
+        ],
+        re: [ /\bmy\s*bad\b/i, /\bfeel\s*bad\b/i ]
+      },
+      angry: {
+        w: 1,
+        kws: [
+          '生气','愤怒','火大','气死','烦死','讨厌','警告','别再','滚','离谱','恶心你','angry','mad','furious','annoyed','hate','wtf','damn','shut up'
+        ],
+        re: [ /!{2,}/, /\bseriously\b/i ]
+      },
+      fear: {
+        w: 1,
+        kws: [
+          '害怕','恐惧','担心','焦虑','紧张','慌','吓死','惊讶','震惊','不敢','怎么办','scared','afraid','fear','anxious','nervous','worried','panic','shocked','surprised'
+        ],
+        re: [ /\bomg\b/i, /\bwhat\s*happened\b/i ]
+      },
+      disgust: {
+        w: 1,
+        kws: [
+          '恶心','反感','厌恶','拒绝','不行','算了吧','别了','受不了','离我远点','gross','disgust','nasty','ew','nope','reject'
+        ],
+        re: [ /\bno\s*way\b/i ]
+      },
+      focus: {
+        w: 1,
+        kws: [
+          '我在听','继续说','请讲','我明白你说的','嗯嗯','好的你说','listen','listening','go on','i\'m listening','tell me more','I see'
+        ],
+        re: [ /\bcarry\s*on\b/i ]
+      },
+      think: {
+        w: 1,
+        kws: [
+          '让我想想','思考','分析一下','处理中','我需要时间','稍等','我在处理','推理','可能','也许','maybe','let me think','thinking','processing','give me a moment','hold on','consider'
+        ],
+        re: [ /\bto\s*be\s*honest\b/i ]
+      },
+      confirm: {
+        w: 1,
+        kws: [
+          '好的','明白','收到','确认','完成','搞定','可以','没问题','已解决','done','ok','okay','sure','confirmed','completed','resolved','got it','roger'
+        ],
+        re: [ /\blooks\s*good\b/i ]
+      },
+      confuse: {
+        w: 1,
+        kws: [
+          '不懂','没理解','什么意思','为什么','怎么回事','疑问','困惑','看不懂','??','???','confused','not sure','i don\'t understand','what do you mean','huh','why'
+        ],
+        re: [ /\?{2,}/ ]
+      },
+      wink: {
+        w: 1,
+        kws: [
+          '开个玩笑','逗你','你懂的','嘿嘿','调皮','wink','just kidding','jk',';)','；）','🤫'
+        ],
+        re: [ /;\)/ ]
+      },
+      sleepy: {
+        w: 1,
+        kws: [
+          '困了','好困','想睡','疲惫','累','低电量','没电','顶不住','zZ','zzz','sleepy','tired','exhausted','need sleep','low battery','drained'
+        ],
+        re: [ /\bzzz+\b/i ]
+      },
+      party: {
+        w: 1,
+        kws: [
+          '庆祝','太好了','激动','兴奋','起飞','冲','赢了','突破','release','上线了','success','party','celebrate','excited','let\'s go','we did it','victory'
+        ],
+        re: [ /\bship(ped)?\b/i, /\blaunch(ed)?\b/i ]
+      }
+    };
+
+    const EXAMPLES = [
+      '太棒了！我们终于搞定了，今晚必须庆祝一下！',
+      '我有点难过……感觉自己做得不够好。',
+      '别再这样了！你这是在浪费我的时间。',
+      'I feel anxious and scared about what will happen next...',
+      '这也太恶心了吧，完全不能接受。',
+      '你继续说，我在认真听。',
+      '让我想想，可能需要先拆解一下问题。',
+      '收到，已确认并处理完成 ✅',
+      '我不太理解你的意思，能再解释一下吗？？',
+      '嘿嘿，开个玩笑啦 ;) ',
+      '好困，低电量了…我需要睡一会儿。',
+      'We did it! Launch successful! 🎉'
+    ];
+
+    function normText(s){
+      return (s||'')
+        .replace(/[\u200B-\u200D\uFEFF]/g,'')
+        .replace(/[\r\t]+/g,' ')
+        .trim();
+    }
+
+    function scoreText(text){
+      const t = normText(text);
+      const low = t.toLowerCase();
+      const scores = {};
+      for(const key of Object.keys(RULES)) scores[key]=0;
+
+      // punctuation signals
+      const exclaim = (t.match(/!/g)||[]).length + (t.match(/！/g)||[]).length;
+      const ques = (t.match(/\?/g)||[]).length + (t.match(/？/g)||[]).length;
+      const ellipsis = (t.match(/…/g)||[]).length + (t.match(/\.\.\./g)||[]).length;
+
+      if(exclaim>=2){ scores.party += 1.2; scores.angry += 0.6; }
+      if(ques>=2){ scores.confuse += 1.2; }
+      if(ellipsis>=1){ scores.sad += 0.5; scores.think += 0.35; }
+
+      for(const [id, rule] of Object.entries(RULES)){
+        for(const kw of rule.kws){
+          if(!kw) continue;
+          // allow exact emoji / ascii patterns too
+          if(kw.includes('\\')){
+            try{
+              const r = new RegExp(kw,'i');
+              if(r.test(low)) scores[id] += 1.0*rule.w;
+            }catch(e){}
+            continue;
+          }
+          const needle = kw.toLowerCase();
+          if(low.includes(needle) || t.includes(kw)){
+            // slightly upweight multi-char keywords
+            const boost = Math.min(1.8, 0.7 + needle.length*0.08);
+            scores[id] += boost*rule.w;
+          }
+        }
+        for(const r of rule.re||[]){
+          if(r.test(t) || r.test(low)) scores[id] += 1.25*rule.w;
+        }
+      }
+
+      // light semantic tie-breakers
+      if(/(谢谢|感谢|thank)/i.test(t)) scores.happy += 0.8;
+      if(/(对不起|抱歉|sorry)/i.test(t)) scores.sad += 0.6;
+      if(/(不行|拒绝|nope|reject)/i.test(t)) scores.disgust += 0.6;
+      if(/(我在听|listen|listening)/i.test(t)) scores.focus += 0.7;
+
+      // normalize with slight preference to interaction states when short & neutral
+      const len = t.length;
+      if(len>0 && len<16){
+        scores.focus += 0.15;
+        scores.think += 0.15;
+      }
+
+      return {scores, meta:{exclaim, ques, ellipsis}};
+    }
+
+    function pickEmotion(text){
+      const {scores} = scoreText(text);
+      let bestId = 'happy';
+      let best = -Infinity;
+      for(const [id,val] of Object.entries(scores)){
+        if(val>best){ best=val; bestId=id; }
+      }
+      // if everything is zero, default to focus (neutral listening)
+      if(best<=0.01) bestId = 'focus';
+      return {bestId, scores};
+    }
+
+    // --------- Renderer ---------
+    let currentEmotionId = 'focus';
+    let prevEmotionId = currentEmotionId;
+    let transitionStart = performance.now();
+    let transitioning = true;
+
+    function setEmotion(id){
+      if(!EMOTION_BY_ID[id]) id='focus';
+      prevEmotionId = currentEmotionId;
+      currentEmotionId = id;
+      transitionStart = performance.now();
+      transitioning = true;
+
+      const e = EMOTION_BY_ID[id];
+      emotionLabelEl.innerHTML = `${e.emoji} 当前情绪：<span style="color:rgba(255,255,255,.86)">${e.label}</span> <span class="tiny">· ${e.group}</span>`;
+
+      // micro feedback
+      if(id==='angry' || id==='fear'){
+        screenWrap.classList.remove('shake');
+        void screenWrap.offsetWidth;
+        screenWrap.classList.add('shake');
+      }
+    }
+
+    function drawLED(matrix, color, t){
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0,0,W,H);
+
+      // background
+      ctx.fillStyle = '#02030a';
+      ctx.fillRect(0,0,W,H);
+
+      const dim = Math.min(W, H);
+      const pad = Math.floor(dim*0.08);
+      const cell = (dim - pad*2)/SIZE;
+      const r = cell*0.33;
+      const offX = (W - dim) / 2;
+      const offY = (H - dim) / 2;
+
+      // global flicker
+      const flicker = 0.92 + 0.06*Math.sin(t*0.008) + 0.03*Math.sin(t*0.027);
+
+      // off dots
+      for(let y=0;y<SIZE;y++){
+        for(let x=0;x<SIZE;x++){
+          const cx = offX + pad + (x+0.5)*cell;
+          const cy = offY + pad + (y+0.5)*cell;
+          ctx.beginPath();
+          ctx.fillStyle = 'rgba(255,255,255,0.05)';
+          ctx.arc(cx, cy, r, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+
+      // on dots
+      for(let y=0;y<SIZE;y++){
+        for(let x=0;x<SIZE;x++){
+          const v = matrix[y][x];
+          if(v<=0.02) continue;
+          const cx = offX + pad + (x+0.5)*cell;
+          const cy = offY + pad + (y+0.5)*cell;
+
+          // per-pixel shimmer
+          const shimmer = 0.9 + 0.2*Math.sin((x*13+y*7) + t*0.012);
+          const intensity = clamp((v/2) * flicker * shimmer, 0, 1);
+
+          const glowA = 0.10 + 0.55*intensity;
+          const coreA = 0.20 + 0.75*intensity;
+
+          // outer glow
+          ctx.save();
+          ctx.shadowBlur = r*3.4;
+          ctx.shadowColor = hexToRgba(color, 0.9);
+          ctx.fillStyle = hexToRgba(color, glowA);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r*1.05, 0, Math.PI*2);
+          ctx.fill();
+          ctx.restore();
+
+          // inner core with radial gradient
+          const g = ctx.createRadialGradient(cx,cy, r*0.15, cx,cy, r*1.05);
+          g.addColorStop(0, hexToRgba('#ffffff', 0.95*coreA));
+          g.addColorStop(0.35, hexToRgba(color, 0.90*coreA));
+          g.addColorStop(1, hexToRgba(color, 0.05));
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r*1.05, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+
+      // vignette
+      const vg = ctx.createRadialGradient(W*0.5,H*0.5, dim*0.20, W*0.5,H*0.5, dim*0.62);
+      vg.addColorStop(0, 'rgba(0,0,0,0)');
+      vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+      ctx.fillStyle = vg;
+      ctx.fillRect(0,0,W,H);
+    }
+
+    function hexToRgba(hex, a){
+      const h = hex.replace('#','');
+      const r = parseInt(h.substring(0,2),16);
+      const g = parseInt(h.substring(2,4),16);
+      const b = parseInt(h.substring(4,6),16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    function tick(t){
+      const now = t;
+      const eNow = EMOTION_BY_ID[currentEmotionId];
+      const ePrev = EMOTION_BY_ID[prevEmotionId];
+
+      // transition blend
+      const dur = 520;
+      const dt = now - transitionStart;
+      let p = clamp(dt/dur, 0, 1);
+      p = easeOutCubic(p);
+
+      const matPrev = patternFor(prevEmotionId, transitionStart);
+      const matNow = patternFor(currentEmotionId, now);
+      const mat = transitioning ? blendMatrices(matPrev, matNow, p) : matNow;
+
+      if(transitioning && dt>=dur){
+        transitioning = false;
+      }
+
+      drawLED(mat, eNow.color, now);
+      requestAnimationFrame(tick);
+    }
+
+    requestAnimationFrame(tick);
+
+    // --------- UI interactions ---------
+    function analyze(){
+      const txt = textEl.value;
+      const {bestId} = pickEmotion(txt);
+      setEmotion(bestId);
+    }
+
+    analyzeBtn.addEventListener('click', analyze);
+    randomBtn.addEventListener('click', ()=>{
+      const s = EXAMPLES[Math.floor(Math.random()*EXAMPLES.length)];
+      textEl.value = s;
+      analyze();
+    });
+
+    textEl.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' && !e.shiftKey){
+        e.preventDefault();
+        analyze();
+      }
+    });
+
+    // build chips
+    const chipData = [
+      {t:'太棒了！我们上线成功了！🎉', id:'party'},
+      {t:'我有点难过…这次没做好。', id:'sad'},
+      {t:'别再这样了！！', id:'angry'},
+      {t:'I\'m scared… what if it fails?', id:'fear'},
+      {t:'这太恶心了，完全不能接受。', id:'disgust'},
+      {t:'你继续说，我在听。', id:'focus'},
+      {t:'让我想想，可能需要一步步分析。', id:'think'},
+      {t:'收到，已确认完成 ✅', id:'confirm'},
+      {t:'我不太理解你的意思？？', id:'confuse'},
+      {t:'嘿嘿，just kidding ;) ', id:'wink'},
+      {t:'好困…低电量了。', id:'sleepy'},
+      {t:'I\'m so happy, thanks!', id:'happy'},
+    ];
+
+    chipData.forEach(c=>{
+      const el = document.createElement('div');
+      el.className = 'chip';
+      el.textContent = c.t;
+      el.title = '点击填入并分析';
+      el.addEventListener('click', ()=>{
+        textEl.value = c.t;
+        setEmotion(c.id);
+      });
+      chipsEl.appendChild(el);
+    });
+
+    // initial state
+    setEmotion('focus');
+
+  })();
+  </script>
+</body>
+</html>
