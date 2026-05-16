@@ -561,26 +561,34 @@
     const EMOTION_BY_ID = Object.fromEntries(EMOTIONS.map(e=>[e.id,e]));
 
     // --------- Pattern generator ---------
+    const FACE = {
+      leftEyeX: 8,
+      rightEyeX: 16,
+      eyeY: 11,
+      browOuterY: 5,
+      browInnerY: 6
+    };
+
     function faceBase(){
       return makeMatrix(0);
     }
 
     function addEyesSmile(m){
       drawThick(m, (mm)=>{
-        drawArc(mm, 8, 10.4, 2.4, Math.PI*0.18, Math.PI*0.82, 2);
-        drawArc(mm, 16, 10.4, 2.4, Math.PI*0.18, Math.PI*0.82, 2);
+        drawArc(mm, FACE.leftEyeX, FACE.eyeY + 0.2, 1.8, Math.PI*0.2, Math.PI*0.8, 2);
+        drawArc(mm, FACE.rightEyeX, FACE.eyeY + 0.2, 1.8, Math.PI*0.2, Math.PI*0.8, 2);
       }, 0);
     }
 
     function addEyesRound(m, open=1){
-      const r = open>0.9 ? 2.4 : (open>0.55 ? 2.0 : 1.4);
+      const r = open>0.9 ? 1.8 : (open>0.55 ? 1.5 : 1.1);
       drawThick(m, (mm)=>{
-        drawCircle(mm, 8, 10, r, 2);
-        drawCircle(mm, 16, 10, r, 2);
+        drawCircle(mm, FACE.leftEyeX, FACE.eyeY, r, 2);
+        drawCircle(mm, FACE.rightEyeX, FACE.eyeY, r, 2);
       }, 0);
       if(open>0.75){
-        setPx(m,8,10,2);
-        setPx(m,16,10,2);
+        setPx(m, FACE.leftEyeX, FACE.eyeY, 2);
+        setPx(m, FACE.rightEyeX, FACE.eyeY, 2);
       }
     }
 
@@ -588,32 +596,39 @@
       const dx = Math.round(Math.sin(t*0.0012)*1);
       const dy = Math.round(Math.cos(t*0.0010)*1);
       drawThick(m, (mm)=>{
-        drawCircle(mm, 8, 10, 2.4, 2);
-        drawCircle(mm, 16, 10, 2.4, 2);
+        drawCircle(mm, FACE.leftEyeX, FACE.eyeY, 1.8, 2);
+        drawCircle(mm, FACE.rightEyeX, FACE.eyeY, 1.8, 2);
       }, 0);
-      setPx(m, 8+dx, 10+dy, 2);
-      setPx(m, 16+dx, 10+dy, 2);
+      setPx(m, FACE.leftEyeX + dx, FACE.eyeY + dy, 2);
+      setPx(m, FACE.rightEyeX + dx, FACE.eyeY + dy, 2);
+    }
+
+    function addEyesLine(m, leftY=FACE.eyeY, rightY=FACE.eyeY, tilt=0, v=2){
+      drawThick(m, (mm)=>{
+        drawLine(mm, FACE.leftEyeX - 2, leftY - tilt, FACE.leftEyeX + 2, leftY + tilt, v);
+        drawLine(mm, FACE.rightEyeX - 2, rightY + tilt, FACE.rightEyeX + 2, rightY - tilt, v);
+      }, 0);
     }
 
     function addBrowsAngry(m){
       drawThick(m, (mm)=>{
-        drawLine(mm, 5, 6, 10, 8, 2);
-        drawLine(mm, 14, 8, 19, 6, 2);
+        drawLine(mm, 5, FACE.browOuterY, 10, FACE.browInnerY, 2);
+        drawLine(mm, 14, FACE.browInnerY, 19, FACE.browOuterY, 2);
       }, 0);
     }
 
     function addBrowsSad(m){
       drawThick(m, (mm)=>{
-        drawLine(mm, 5, 7, 10, 5, 2);
-        drawLine(mm, 14, 5, 19, 7, 2);
+        drawLine(mm, 5, FACE.browInnerY, 10, FACE.browOuterY, 2);
+        drawLine(mm, 14, FACE.browOuterY, 19, FACE.browInnerY, 2);
       }, 0);
     }
 
     function addBrowsConfused(m, t){
       const wobble = Math.round(Math.sin(t*0.0016)*1);
       drawThick(m, (mm)=>{
-        drawLine(mm, 5, 6+wobble, 10, 5, 2);
-        drawLine(mm, 14, 5, 19, 6-wobble, 2);
+        drawLine(mm, 5, FACE.browOuterY + wobble, 10, FACE.browOuterY - 1, 2);
+        drawLine(mm, 14, FACE.browOuterY - 1, 19, FACE.browOuterY + wobble, 2);
       }, 0);
     }
 
@@ -719,10 +734,7 @@
 
         case 'angry':
           addBrowsAngry(m);
-          drawThick(m, (mm)=>{
-            drawLine(mm, 6, 10, 10, 10, 2);
-            drawLine(mm, 14, 10, 18, 10, 2);
-          }, 0);
+          addEyesLine(m, FACE.eyeY, FACE.eyeY, 0, 2);
           addMouthFlat(m);
           break;
 
@@ -730,15 +742,15 @@
           addEyesRound(m, 1);
           addMouthOpen(m);
           drawThick(m, (mm)=>{
-            drawArc(mm, 8, 7.2, 2.8, Math.PI*1.18, Math.PI*1.82, 2);
-            drawArc(mm, 16, 7.2, 2.8, Math.PI*1.18, Math.PI*1.82, 2);
+            drawArc(mm, FACE.leftEyeX, 6.2, 2.1, Math.PI*1.18, Math.PI*1.82, 2);
+            drawArc(mm, FACE.rightEyeX, 6.2, 2.1, Math.PI*1.18, Math.PI*1.82, 2);
           }, 0);
           break;
 
         case 'disgust':
           drawThick(m, (mm)=>{
-            drawLine(mm, 6, 10, 10, 9, 2);
-            drawLine(mm, 14, 9, 18, 10, 2);
+            drawLine(mm, 6, FACE.eyeY, 10, FACE.eyeY - 1, 2);
+            drawLine(mm, 14, FACE.eyeY - 1, 18, FACE.eyeY, 2);
           }, 0);
           drawThick(m, (mm)=>{
             drawLine(mm, 9, 18, 12, 17, 2);
@@ -755,14 +767,14 @@
 
         case 'think':
           drawThick(m, (mm)=>{
-            drawCircle(mm, 8, 10, 2.2, 2);
-            drawCircle(mm, 16, 10, 2.2, 2);
+            drawCircle(mm, FACE.leftEyeX, FACE.eyeY, 1.6, 2);
+            drawCircle(mm, FACE.rightEyeX, FACE.eyeY, 1.6, 2);
           }, 0);
-          setPx(m, 7, 11, 2);
-          setPx(m, 15, 9, 2);
+          setPx(m, FACE.leftEyeX - 1, FACE.eyeY + 1, 2);
+          setPx(m, FACE.rightEyeX - 1, FACE.eyeY - 1, 2);
           drawThick(m, (mm)=>{
-            drawLine(mm, 5, 7, 10, 7, 2);
-            drawLine(mm, 14, 7, 19, 6, 2);
+            drawLine(mm, 5, 6, 10, 6, 2);
+            drawLine(mm, 14, 6, 19, 5, 2);
           }, 0);
           drawThick(m, (mm)=>{
             drawLine(mm, 10, 17, 14, 16, 2);
@@ -771,21 +783,21 @@
 
         case 'confirm':
           drawThick(m, (mm)=>{
-            drawLine(mm, 6, 10, 10, 10, 2);
-            if(!blinkClosed){ drawCircle(mm, 16, 10, 2.2, 2); }
+            drawLine(mm, FACE.leftEyeX - 2, FACE.eyeY, FACE.leftEyeX + 2, FACE.eyeY, 2);
+            if(!blinkClosed){ drawCircle(mm, FACE.rightEyeX, FACE.eyeY, 1.6, 2); }
           }, 0);
-          if(!blinkClosed){ setPx(m, 16, 10, 2); }
+          if(!blinkClosed){ setPx(m, FACE.rightEyeX, FACE.eyeY, 2); }
           addMouthSmile(m);
           break;
 
         case 'confuse':
           addBrowsConfused(m, t);
           drawThick(m, (mm)=>{
-            drawCircle(mm, 8, 10, blinkClosed?1.6:2.2, 2);
-            drawCircle(mm, 16, 10, 2.2, 2);
+            drawCircle(mm, FACE.leftEyeX, FACE.eyeY, blinkClosed?1.2:1.6, 2);
+            drawCircle(mm, FACE.rightEyeX, FACE.eyeY, 1.6, 2);
           }, 0);
-          setPx(m, 8, 10, 2);
-          setPx(m, 17, 10, 2);
+          setPx(m, FACE.leftEyeX, FACE.eyeY, 2);
+          setPx(m, FACE.rightEyeX + 1, FACE.eyeY, 2);
           drawThick(m, (mm)=>{
             drawLine(mm, 9, 18, 15, 16, 2);
           }, 0);
@@ -793,23 +805,20 @@
 
         case 'wink':
           drawThick(m, (mm)=>{
-            drawCircle(mm, 8, 10, 2.2, 2);
-            drawLine(mm, 14, 10, 18, 10, 2);
+            drawCircle(mm, FACE.leftEyeX, FACE.eyeY, 1.6, 2);
+            drawLine(mm, FACE.rightEyeX - 2, FACE.eyeY, FACE.rightEyeX + 2, FACE.eyeY, 2);
           }, 0);
-          setPx(m, 8, 10, 2);
+          setPx(m, FACE.leftEyeX, FACE.eyeY, 2);
           drawThick(m, (mm)=>{
             drawArc(mm, 12, 16.8, 5.1, Math.PI*0.10, Math.PI*0.56, 2);
           }, 0);
           break;
 
         case 'sleepy':
+          addEyesLine(m, FACE.eyeY, FACE.eyeY, 0, 2);
           drawThick(m, (mm)=>{
-            drawLine(mm, 6, 10, 10, 10, 2);
-            drawLine(mm, 14, 10, 18, 10, 2);
-          }, 0);
-          drawThick(m, (mm)=>{
-            drawLine(mm, 6, 11, 10, 12, 1);
-            drawLine(mm, 14, 12, 18, 11, 1);
+            drawLine(mm, FACE.leftEyeX - 2, FACE.eyeY + 1, FACE.leftEyeX + 2, FACE.eyeY + 2, 1);
+            drawLine(mm, FACE.rightEyeX - 2, FACE.eyeY + 2, FACE.rightEyeX + 2, FACE.eyeY + 1, 1);
           }, 0);
           drawThick(m, (mm)=>{
             drawArc(mm, 12, 18, 3.0, Math.PI*1.10, Math.PI*1.90, 2);
