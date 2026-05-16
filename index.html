@@ -562,29 +562,22 @@
 
     // --------- Pattern generator ---------
     function faceBase(){
-      const m = makeMatrix(0);
-      // subtle cheeks frame
-      drawThick(m, (mm)=>{
-        drawArc(mm, 12, 12.5, 10.2, 0.15*Math.PI, 0.85*Math.PI, 1);
-        drawArc(mm, 12, 12.5, 10.2, 1.15*Math.PI, 1.85*Math.PI, 1);
-      }, 0);
-      return m;
+      return makeMatrix(0);
     }
 
     function addEyesSmile(m){
       drawThick(m, (mm)=>{
-        drawArc(mm, 8, 9.8, 3.1, Math.PI*0.15, Math.PI*0.85, 2);
-        drawArc(mm, 16, 9.8, 3.1, Math.PI*0.15, Math.PI*0.85, 2);
-      }, 1);
+        drawArc(mm, 8, 10.4, 2.4, Math.PI*0.18, Math.PI*0.82, 2);
+        drawArc(mm, 16, 10.4, 2.4, Math.PI*0.18, Math.PI*0.82, 2);
+      }, 0);
     }
 
     function addEyesRound(m, open=1){
-      const r = open>0.9 ? 3.2 : (open>0.55 ? 2.6 : 1.8);
+      const r = open>0.9 ? 2.4 : (open>0.55 ? 2.0 : 1.4);
       drawThick(m, (mm)=>{
         drawCircle(mm, 8, 10, r, 2);
         drawCircle(mm, 16, 10, r, 2);
       }, 0);
-      // pupils
       if(open>0.75){
         setPx(m,8,10,2);
         setPx(m,16,10,2);
@@ -592,12 +585,11 @@
     }
 
     function addEyesFocus(m, t){
-      // iris micro movement
       const dx = Math.round(Math.sin(t*0.0012)*1);
       const dy = Math.round(Math.cos(t*0.0010)*1);
       drawThick(m, (mm)=>{
-        drawCircle(mm, 8, 10, 3.2, 2);
-        drawCircle(mm, 16, 10, 3.2, 2);
+        drawCircle(mm, 8, 10, 2.4, 2);
+        drawCircle(mm, 16, 10, 2.4, 2);
       }, 0);
       setPx(m, 8+dx, 10+dy, 2);
       setPx(m, 16+dx, 10+dy, 2);
@@ -627,27 +619,26 @@
 
     function addMouthSmile(m){
       drawThick(m, (mm)=>{
-        drawArc(mm, 12, 15.8, 6.3, Math.PI*0.15, Math.PI*0.85, 2);
-      }, 1);
+        drawArc(mm, 12, 16.1, 5.5, Math.PI*0.20, Math.PI*0.80, 2);
+      }, 0);
     }
 
     function addMouthFrown(m){
       drawThick(m, (mm)=>{
-        drawArc(mm, 12, 18.2, 6.3, Math.PI*1.15, Math.PI*1.85, 2);
-      }, 1);
+        drawArc(mm, 12, 18.0, 5.2, Math.PI*1.20, Math.PI*1.80, 2);
+      }, 0);
     }
 
     function addMouthFlat(m){
       drawThick(m, (mm)=>{
-        drawLine(mm, 8, 17, 16, 17, 2);
-      }, 1);
+        drawLine(mm, 9, 17, 15, 17, 2);
+      }, 0);
     }
 
     function addMouthOpen(m){
       drawThick(m, (mm)=>{
-        drawCircle(mm, 12, 17, 3.3, 2);
+        drawCircle(mm, 12, 17, 2.4, 2);
       }, 0);
-      // inner darkness hint
       setPx(m,12,17,1);
     }
 
@@ -718,159 +709,118 @@
         case 'happy':
           addEyesSmile(m);
           addMouthSmile(m);
-          // cheek sparks
-          setPx(m, 6, 15, 1); setPx(m, 18, 15, 1);
           break;
 
         case 'sad':
           addBrowsSad(m);
-          addEyesRound(m, blinkClosed?0.45:0.9);
+          addEyesRound(m, blinkClosed?0.45:0.82);
           addMouthFrown(m);
-          addTear(m, 'left');
           break;
 
         case 'angry':
           addBrowsAngry(m);
-          // sharp eyes (slit)
           drawThick(m, (mm)=>{
             drawLine(mm, 6, 10, 10, 10, 2);
             drawLine(mm, 14, 10, 18, 10, 2);
-          }, 1);
+          }, 0);
           addMouthFlat(m);
-          // teeth hint
-          setPx(m, 10, 17, 1); setPx(m, 12, 17, 1); setPx(m, 14, 17, 1);
           break;
 
         case 'fear':
           addEyesRound(m, 1);
           addMouthOpen(m);
-          // raised brows
           drawThick(m, (mm)=>{
-            drawArc(mm, 8, 6.5, 3.2, Math.PI*1.15, Math.PI*1.85, 2);
-            drawArc(mm, 16, 6.5, 3.2, Math.PI*1.15, Math.PI*1.85, 2);
+            drawArc(mm, 8, 7.2, 2.8, Math.PI*1.18, Math.PI*1.82, 2);
+            drawArc(mm, 16, 7.2, 2.8, Math.PI*1.18, Math.PI*1.82, 2);
           }, 0);
-          // sweat drop
-          setPx(m, 20, 12, 1); setPx(m, 21, 13, 2); setPx(m, 20, 14, 1);
           break;
 
         case 'disgust':
-          addNoseWrinkle(m);
-          // squint eyes
           drawThick(m, (mm)=>{
             drawLine(mm, 6, 10, 10, 9, 2);
             drawLine(mm, 14, 9, 18, 10, 2);
-          }, 1);
-          // crooked frown
+          }, 0);
           drawThick(m, (mm)=>{
-            drawArc(mm, 11, 18.2, 5.5, Math.PI*1.20, Math.PI*1.65, 2);
-            drawArc(mm, 13, 18.0, 5.5, Math.PI*1.35, Math.PI*1.85, 2);
-          }, 1);
+            drawLine(mm, 9, 18, 12, 17, 2);
+            drawLine(mm, 12, 17, 15, 18, 2);
+          }, 0);
           break;
 
         case 'focus':
           addEyesFocus(m, t);
-          // small neutral mouth
           drawThick(m, (mm)=>{
             drawLine(mm, 9, 17, 15, 17, 2);
-          }, 1);
-          // tilt hint by a side dot
-          setPx(m, 4, 12, 1);
+          }, 0);
           break;
 
         case 'think':
-          // eyes glance away
           drawThick(m, (mm)=>{
-            drawCircle(mm, 8, 10, 3.0, 2);
-            drawCircle(mm, 16, 10, 3.0, 2);
+            drawCircle(mm, 8, 10, 2.2, 2);
+            drawCircle(mm, 16, 10, 2.2, 2);
           }, 0);
           setPx(m, 7, 11, 2);
           setPx(m, 15, 9, 2);
-          // slight brow
           drawThick(m, (mm)=>{
             drawLine(mm, 5, 7, 10, 7, 2);
             drawLine(mm, 14, 7, 19, 6, 2);
           }, 0);
-          // thinking mouth
           drawThick(m, (mm)=>{
             drawLine(mm, 10, 17, 14, 16, 2);
-          }, 1);
-          // processing dots
-          const p = (t*0.006)% (Math.PI*2);
-          setPx(m, 9, 20, Math.sin(p)>0.6?2:0);
-          setPx(m, 12, 20, Math.sin(p+1.8)>0.6?2:0);
-          setPx(m, 15, 20, Math.sin(p+3.6)>0.6?2:0);
+          }, 0);
           break;
 
         case 'confirm':
-          // wink + smile + check
           drawThick(m, (mm)=>{
-            // left eye wink
             drawLine(mm, 6, 10, 10, 10, 2);
-            // right eye open blink sometimes
-            if(!blinkClosed){ drawCircle(mm, 16, 10, 3.0, 2); }
+            if(!blinkClosed){ drawCircle(mm, 16, 10, 2.2, 2); }
           }, 0);
           if(!blinkClosed){ setPx(m, 16, 10, 2); }
           addMouthSmile(m);
-          addCheckMark(m, t);
           break;
 
         case 'confuse':
           addBrowsConfused(m, t);
-          // uneven eyes
           drawThick(m, (mm)=>{
-            drawCircle(mm, 8, 10, blinkClosed?2.0:3.0, 2);
-            drawCircle(mm, 16, 10, 3.0, 2);
+            drawCircle(mm, 8, 10, blinkClosed?1.6:2.2, 2);
+            drawCircle(mm, 16, 10, 2.2, 2);
           }, 0);
           setPx(m, 8, 10, 2);
           setPx(m, 17, 10, 2);
-          // crooked mouth
           drawThick(m, (mm)=>{
             drawLine(mm, 9, 18, 15, 16, 2);
-          }, 1);
-          addQuestionMark(m, t);
+          }, 0);
           break;
 
         case 'wink':
-          // playful wink + smirk
           drawThick(m, (mm)=>{
-            drawCircle(mm, 8, 10, 3.0, 2);
+            drawCircle(mm, 8, 10, 2.2, 2);
             drawLine(mm, 14, 10, 18, 10, 2);
           }, 0);
           setPx(m, 8, 10, 2);
           drawThick(m, (mm)=>{
-            drawArc(mm, 12, 16.6, 5.8, Math.PI*0.05, Math.PI*0.55, 2);
-          }, 1);
-          // dimple
-          setPx(m, 16, 16, 1);
+            drawArc(mm, 12, 16.8, 5.1, Math.PI*0.10, Math.PI*0.56, 2);
+          }, 0);
           break;
 
         case 'sleepy':
-          // half-closed eyes
           drawThick(m, (mm)=>{
             drawLine(mm, 6, 10, 10, 10, 2);
             drawLine(mm, 14, 10, 18, 10, 2);
-          }, 1);
-          // droopy lids
+          }, 0);
           drawThick(m, (mm)=>{
             drawLine(mm, 6, 11, 10, 12, 1);
             drawLine(mm, 14, 12, 18, 11, 1);
           }, 0);
-          // small mouth
           drawThick(m, (mm)=>{
-            drawArc(mm, 12, 18, 3.4, Math.PI*1.05, Math.PI*1.95, 2);
+            drawArc(mm, 12, 18, 3.0, Math.PI*1.10, Math.PI*1.90, 2);
           }, 0);
-          addZzz(m, t);
           break;
 
         case 'party':
-          // big happy eyes + wide smile + sparkles
           addEyesRound(m, 1);
           drawThick(m, (mm)=>{
-            drawArc(mm, 12, 15.4, 7.0, Math.PI*0.10, Math.PI*0.90, 2);
-          }, 1);
-          // confetti
-          addPartySparkles(m, t);
-          setPx(m, 6, 19, 1); setPx(m, 8, 21, 2); setPx(m, 18, 20, 1);
+            drawArc(mm, 12, 15.7, 6.2, Math.PI*0.14, Math.PI*0.86, 2);
+          }, 0);
           break;
 
         default:
