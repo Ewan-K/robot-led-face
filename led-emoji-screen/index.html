@@ -896,6 +896,26 @@
         </div>
       </section>
 
+      <section class="panel displayPanel">
+        <div class="status">
+          <div class="emotion" id="emotionLabel">🙂 当前情绪：<span style="color:var(--muted); font-weight:600">等待分析</span></div>
+          <div class="legend">
+            <div class="pill"><span class="mini"></span><span>像素发光</span></div>
+            <div class="pill"><span class="mini" style="background:var(--neon-lime); box-shadow:0 0 16px rgba(182,255,74,.35)"></span><span>扫描线</span></div>
+            <div class="pill"><span class="mini" style="background:var(--warn); box-shadow:0 0 16px rgba(255,176,46,.35)"></span><span>轻微闪烁</span></div>
+          </div>
+        </div>
+
+        <div class="screenWrap" id="screenWrap">
+          <canvas id="screen" width="1600" height="900" aria-label="LED dot matrix" role="img"></canvas>
+        </div>
+
+        <div class="footer">
+          12 种预设表情：基础情绪（快乐/悲伤/愤怒/恐惧惊讶/厌恶）＋交互状态（专注/思考/确认/困惑）＋社交信号（眨眼/困倦/庆祝）。
+          <div class="tiny">说明：情绪分析使用前端规则引擎（关键词 + 标点语气 + 轻量语义规则），并给出一个最匹配结果。</div>
+        </div>
+      </section>
+
       <section class="panel inputPanel">
         <label for="text">AI 文字输入</label>
         <textarea id="text" placeholder="例如：\n- 太棒了！我们终于搞定了！\n- I feel anxious and scared about what will happen next.\n- 我不太理解你的意思，能再解释一下吗？"></textarea>
@@ -915,26 +935,6 @@
 
         <div class="chips" id="chips"></div>
         <div class="hint">提示：按 <span class="kbd">Enter</span> 也可直接分析（<span class="kbd">Shift</span>+<span class="kbd">Enter</span> 换行）。页面完全在本地运行：不上传你的文本。</div>
-      </section>
-
-      <section class="panel displayPanel">
-        <div class="status">
-          <div class="emotion" id="emotionLabel">🙂 当前情绪：<span style="color:var(--muted); font-weight:600">等待分析</span></div>
-          <div class="legend">
-            <div class="pill"><span class="mini"></span><span>像素发光</span></div>
-            <div class="pill"><span class="mini" style="background:var(--neon-lime); box-shadow:0 0 16px rgba(182,255,74,.35)"></span><span>扫描线</span></div>
-            <div class="pill"><span class="mini" style="background:var(--warn); box-shadow:0 0 16px rgba(255,176,46,.35)"></span><span>轻微闪烁</span></div>
-          </div>
-        </div>
-
-        <div class="screenWrap" id="screenWrap">
-          <canvas id="screen" width="1600" height="900" aria-label="LED dot matrix" role="img"></canvas>
-        </div>
-
-        <div class="footer">
-          12 种预设表情：基础情绪（快乐/悲伤/愤怒/恐惧惊讶/厌恶）＋交互状态（专注/思考/确认/困惑）＋社交信号（眨眼/困倦/庆祝）。
-          <div class="tiny">说明：情绪分析使用前端规则引擎（关键词 + 标点语气 + 轻量语义规则），并给出一个最匹配结果。</div>
-        </div>
       </section>
     </div>
   </div>

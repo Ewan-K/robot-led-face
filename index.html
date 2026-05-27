@@ -891,8 +891,28 @@
         <div class="transcript" id="transcript" aria-live="polite"></div>
 
         <div class="voiceHint">
-          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>，页面会先连接本地代理 <code>ws://localhost:8765</code>，再由代理转发到云端服务；ASR 文本与模型回复将自动驱动上方 LED 表情切换。<br/>
-          <span class="tiny">提示：请先启动本地 Node.js WebSocket 代理，再打开当前页面；浏览器需要授权麦克风权限；首次连接可能需要几秒。</span>
+          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>（<code>wss://openspeech.bytedance.com/api/v3/realtime/dialogue</code>），ASR 文本与模型回复将自动驱动上方 LED 表情切换。<br/>
+          <span class="tiny">提示：浏览器需要授权麦克风权限；首次连接可能需要几秒；浏览器 WebSocket 不支持自定义 Header，将通过 query 参数携带鉴权字段。</span>
+        </div>
+      </section>
+
+      <section class="panel displayPanel">
+        <div class="status">
+          <div class="emotion" id="emotionLabel">🙂 当前情绪：<span style="color:var(--muted); font-weight:600">等待分析</span></div>
+          <div class="legend">
+            <div class="pill"><span class="mini"></span><span>像素发光</span></div>
+            <div class="pill"><span class="mini" style="background:var(--neon-lime); box-shadow:0 0 16px rgba(182,255,74,.35)"></span><span>扫描线</span></div>
+            <div class="pill"><span class="mini" style="background:var(--warn); box-shadow:0 0 16px rgba(255,176,46,.35)"></span><span>轻微闪烁</span></div>
+          </div>
+        </div>
+
+        <div class="screenWrap" id="screenWrap">
+          <canvas id="screen" width="1600" height="900" aria-label="LED dot matrix" role="img"></canvas>
+        </div>
+
+        <div class="footer">
+          12 种预设表情：基础情绪（快乐/悲伤/愤怒/恐惧惊讶/厌恶）＋交互状态（专注/思考/确认/困惑）＋社交信号（眨眼/困倦/庆祝）。
+          <div class="tiny">说明：情绪分析使用前端规则引擎（关键词 + 标点语气 + 轻量语义规则），并给出一个最匹配结果。</div>
         </div>
       </section>
 
@@ -915,26 +935,6 @@
 
         <div class="chips" id="chips"></div>
         <div class="hint">提示：按 <span class="kbd">Enter</span> 也可直接分析（<span class="kbd">Shift</span>+<span class="kbd">Enter</span> 换行）。页面完全在本地运行：不上传你的文本。</div>
-      </section>
-
-      <section class="panel displayPanel">
-        <div class="status">
-          <div class="emotion" id="emotionLabel">🙂 当前情绪：<span style="color:var(--muted); font-weight:600">等待分析</span></div>
-          <div class="legend">
-            <div class="pill"><span class="mini"></span><span>像素发光</span></div>
-            <div class="pill"><span class="mini" style="background:var(--neon-lime); box-shadow:0 0 16px rgba(182,255,74,.35)"></span><span>扫描线</span></div>
-            <div class="pill"><span class="mini" style="background:var(--warn); box-shadow:0 0 16px rgba(255,176,46,.35)"></span><span>轻微闪烁</span></div>
-          </div>
-        </div>
-
-        <div class="screenWrap" id="screenWrap">
-          <canvas id="screen" width="1600" height="900" aria-label="LED dot matrix" role="img"></canvas>
-        </div>
-
-        <div class="footer">
-          12 种预设表情：基础情绪（快乐/悲伤/愤怒/恐惧惊讶/厌恶）＋交互状态（专注/思考/确认/困惑）＋社交信号（眨眼/困倦/庆祝）。
-          <div class="tiny">说明：情绪分析使用前端规则引擎（关键词 + 标点语气 + 轻量语义规则），并给出一个最匹配结果。</div>
-        </div>
       </section>
     </div>
   </div>
@@ -1754,10 +1754,17 @@
     // =========================================================
     // ============ 豆包端到端实时语音大模型 接入 =================
     // =========================================================
-    // 浏览器先连接本地代理，再由代理在握手阶段注入鉴权 Header。
+    // 协议参考：https://www.volcengine.com/docs/6561/1594356
+    // 由于浏览器 WebSocket API 不支持自定义 Header，
+    // 这里使用 query 字符串方式携带鉴权字段（与字节官方
+    // byted-ailab-speech-sdk 中前端的鉴权方式一致）。
     // ---------------------------------------------------------
     const DOUBAO_CFG = {
-      WS_URL: 'ws://localhost:8765',
+      WS_URL: 'wss://openspeech.bytedance.com/api/v3/realtime/dialogue',
+      APP_ID: '6415430121',
+      ACCESS_TOKEN: '9oO3d6NCdV0FlJMIhpft5gn2gEmmme1W',
+      RESOURCE_ID: 'volc.speech.dialog',
+      APP_KEY: 'PlgvMymc7f3tQnJ6',
       // TTS 输出请求 PCM s16le 24kHz 单声道，便于浏览器直接播放
       TTS_FORMAT: 'pcm_s16le',
       TTS_SAMPLE_RATE: 24000,
@@ -2140,6 +2147,7 @@
     class DoubaoRealtimeClient{
       constructor(){
         this.ws = null;
+        this.connectId = uuid();
         this.sessionId = null;
         this.sessionIdBytes = null;
         this.sessionStarted = false;
@@ -2153,18 +2161,36 @@
         this._currentUserMsgId = null;
 
         this._closing = false;
+        this._stopPromise = null;
+        this._closePromise = null;
+        this._sessionFinishWaiters = [];
+        this._finishSessionRequested = false;
+        this._finishConnectionRequested = false;
+      }
+
+      buildAuthUrl(){
+        // 将官方 Header 鉴权字段以 query 参数形式传入（snake_case）
+        const params = new URLSearchParams({
+          api_app_id: DOUBAO_CFG.APP_ID,
+          api_access_key: DOUBAO_CFG.ACCESS_TOKEN,
+          api_resource_id: DOUBAO_CFG.RESOURCE_ID,
+          api_app_key: DOUBAO_CFG.APP_KEY,
+          api_connect_id: this.connectId
+        });
+        return `${DOUBAO_CFG.WS_URL}?${params.toString()}`;
       }
 
       async connect(){
         if(this.ws && this.ws.readyState === WebSocket.OPEN) return;
         setVoiceState('connecting','建立连接…');
-        appendMsg('sys','正在连接本地语音代理服务…');
+        appendMsg('sys','正在连接火山引擎豆包实时语音服务…');
 
         await this.player.resume();
 
         return new Promise((resolve, reject)=>{
           let opened = false;
-          const ws = new WebSocket(DOUBAO_CFG.WS_URL);
+          const url = this.buildAuthUrl();
+          const ws = new WebSocket(url);
           ws.binaryType = 'arraybuffer';
           this.ws = ws;
 
@@ -2223,7 +2249,11 @@
         // 错误帧
         if(msgType === 0b1111){
           const txt = payloadObj && payloadObj.error ? payloadObj.error : new TextDecoder().decode(payloadBytes||new Uint8Array());
+          const isIdleTimeoutNoise = f.errorCode === 55000001 || txt.includes('DialogAudioIdleTimeoutError');
           console.error('[Doubao] error frame:', f.errorCode, txt);
+          if(isIdleTimeoutNoise){
+            return;
+          }
           appendMsg('sys', `❌ 服务端错误 code=${f.errorCode}: ${txt}`);
           setVoiceState('error');
           return;
@@ -2231,15 +2261,21 @@
         switch(event){
           case EVT.ConnectionStarted:
             this.connStarted = true;
+            this._finishConnectionRequested = false;
             // 立即发起 StartSession
             this.sessionId = uuid();
             this.sessionIdBytes = new TextEncoder().encode(this.sessionId);
             this._sendStartSession();
             break;
           case EVT.ConnectionFailed:
+            this._finishConnectionRequested = false;
             appendMsg('sys', `❌ 建立连接失败：${payloadObj?.error || ''}`);
             setVoiceState('error');
             this._connectReject && this._connectReject(new Error('ConnectionFailed'));
+            break;
+          case EVT.ConnectionFinished:
+            this.connStarted = false;
+            this._finishConnectionRequested = false;
             break;
           case EVT.SessionStarted:
             this.sessionStarted = true;
@@ -2254,6 +2290,11 @@
             break;
           case EVT.SessionFinished:
             this.sessionStarted = false;
+            this._finishSessionRequested = false;
+            // 唤醒所有等待 SessionFinished 的流程
+            const waiters = this._sessionFinishWaiters;
+            this._sessionFinishWaiters = [];
+            waiters.forEach(fn => { try{ fn(); }catch(e){} });
             break;
           case EVT.ASRInfo:
             // 用户开始说话
@@ -2297,9 +2338,15 @@
               else setVoiceState('ready');
             });
             break;
-          case EVT.DialogCommonError:
-            appendMsg('sys', `⚠️ 对话错误：${payloadObj?.message || ''} (status=${payloadObj?.status_code||''})`);
+          case EVT.DialogCommonError: {
+            const code = payloadObj?.code || payloadObj?.status_code;
+            const message = payloadObj?.message || '';
+            const isIdleTimeoutNoise = code === 55000001 || message.includes('DialogAudioIdleTimeoutError');
+            if(!isIdleTimeoutNoise){
+              appendMsg('sys', `⚠️ 对话错误：${message} (status=${payloadObj?.status_code||''})`);
+            }
             break;
+          }
           default:
             // 其它事件忽略
             break;
@@ -2408,30 +2455,65 @@
           throw err;
         }
       }
-      stopRecording(){
-        if(this.mic){
-          this.mic.stop();
-          this.mic = null;
-        }
-        this.recording = false;
-        if(this.sessionStarted) setVoiceState('ready');
-        else setVoiceState('idle');
+      async _finishSessionAndConnection({ closeSocket=false } = {}){
+        if(this._stopPromise) return this._stopPromise;
+        this._stopPromise = (async ()=>{
+          try{
+            try{ this.player.stop(); }catch(e){}
+
+            const wsOpen = this.ws && this.ws.readyState === WebSocket.OPEN;
+            if(wsOpen && this.sessionStarted && !this._finishSessionRequested){
+              this._finishSessionRequested = true;
+              this._send(EVT.FinishSession, jsonPayload({}), { hasSession:true });
+              await new Promise((resolve)=>{
+                const done = ()=> resolve();
+                this._sessionFinishWaiters.push(done);
+                setTimeout(done, 5000);
+              });
+            }
+
+            if(this.mic){
+              this.mic.stop();
+              this.mic = null;
+            }
+            this.recording = false;
+
+            if(wsOpen && this.connStarted && !this._finishConnectionRequested){
+              this._finishConnectionRequested = true;
+              this._send(EVT.FinishConnection, jsonPayload({}), { hasSession:false });
+            }
+
+            if(closeSocket){
+              try{ this.ws && this.ws.close(); }catch(e){}
+              this.ws = null;
+              this.sessionStarted = false;
+              this.connStarted = false;
+              setVoiceState('idle','已断开');
+            } else {
+              setVoiceState('idle');
+            }
+          } finally {
+            this._stopPromise = null;
+          }
+        })();
+        return this._stopPromise;
+      }
+
+      async stopRecording(){
+        return this._finishSessionAndConnection({ closeSocket:true });
       }
 
       async close(){
+        if(this._closePromise) return this._closePromise;
         this._closing = true;
-        try{ this.stopRecording(); }catch(e){}
-        try{ this.player.stop(); }catch(e){}
-        try{
-          if(this.ws && this.ws.readyState===WebSocket.OPEN && this.sessionStarted){
-            this._send(EVT.FinishSession, jsonPayload({}), { hasSession:true });
-            this._send(EVT.FinishConnection, jsonPayload({}), { hasSession:false });
+        this._closePromise = (async ()=>{
+          try{
+            await this._finishSessionAndConnection({ closeSocket:true });
+          } finally {
+            this._closePromise = null;
           }
-        }catch(e){}
-        try{ this.ws && this.ws.close(); }catch(e){}
-        this.ws = null;
-        this.sessionStarted = false;
-        this.connStarted = false;
+        })();
+        return this._closePromise;
       }
     }
 
@@ -2446,8 +2528,14 @@
           doubaoClient = new DoubaoRealtimeClient();
         }
         if(doubaoClient.recording){
-          // 停止收音（保持连接，便于下一次复用）
-          doubaoClient.stopRecording();
+          // 停止说话并按协议顺序完成会话关闭
+          micBtnLabel.textContent = '停止中…';
+          micBtn.disabled = true;
+          try{
+            await doubaoClient.stopRecording();
+          } finally {
+            micBtn.disabled = false;
+          }
           micBtn.classList.remove('recording');
           micBtnLabel.textContent = '开始说话';
           micBtn.setAttribute('aria-pressed','false');
