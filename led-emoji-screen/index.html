@@ -1950,6 +1950,7 @@
             break;
           case EVT.SessionFinished:
             this.sessionStarted = false;
+            if(this._onSessionFinished) this._onSessionFinished();
             break;
           case EVT.ASRInfo:
             // 用户开始说话
@@ -2115,13 +2116,26 @@
       }
 
       async close(){
+        if(this._closing) return;
         this._closing = true;
         try{ this.stopRecording(); }catch(e){}
         try{ this.player.stop(); }catch(e){}
         try{
-          if(this.ws && this.ws.readyState===WebSocket.OPEN && this.sessionStarted){
-            this._send(EVT.FinishSession, jsonPayload({}), { hasSession:true });
-            this._send(EVT.FinishConnection, jsonPayload({}), { hasSession:false });
+          if(this.ws && this.ws.readyState===WebSocket.OPEN){
+            if(this.sessionStarted){
+              // 步骤1：发 FinishSession，等服务端回 SessionFinished（最多 5s）
+              this._send(EVT.FinishSession, jsonPayload({}), { hasSession:true });
+              await new Promise(res => {
+                this._onSessionFinished = res;
+                setTimeout(res, 5000); // 超时保底
+              });
+              this._onSessionFinished = null;
+            }
+            // 步骤2：发 FinishConnection 再关闭 WS
+            if(this.ws && this.ws.readyState===WebSocket.OPEN){
+              this._send(EVT.FinishConnection, jsonPayload({}), { hasSession:false });
+              await new Promise(res => setTimeout(res, 200)); // 给发送留出时间
+            }
           }
         }catch(e){}
         try{ this.ws && this.ws.close(); }catch(e){}
@@ -2142,11 +2156,16 @@
           doubaoClient = new DoubaoRealtimeClient();
         }
         if(doubaoClient.recording){
-          // 停止收音（保持连接，便于下一次复用）
-          doubaoClient.stopRecording();
+          // 停止说话：走完整断联流程，避免服务端 IdleTimeout
+          micBtnLabel.textContent = '断开中…';
+          micBtn.disabled = true;
+          await doubaoClient.close();
+          doubaoClient = null;
           micBtn.classList.remove('recording');
           micBtnLabel.textContent = '开始说话';
           micBtn.setAttribute('aria-pressed','false');
+          setVoiceState('idle','已断开');
+          micBtn.disabled = false;
         } else {
           micBtnLabel.textContent = '连接中…';
           micBtn.disabled = true;
