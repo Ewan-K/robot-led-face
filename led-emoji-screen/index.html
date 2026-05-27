@@ -822,133 +822,6 @@
 
         }
 
-        .accesskey-overlay {
-          position: fixed;
-          inset: 0;
-          z-index: 9999;
-          background: rgba(5, 6, 10, 0.88);
-          backdrop-filter: blur(22px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: opacity 0.4s ease, visibility 0.4s ease;
-        }
-
-        .accesskey-overlay.hidden {
-          opacity: 0;
-          visibility: hidden;
-          pointer-events: none;
-        }
-
-        .accesskey-card {
-          width: 100%;
-          max-width: 440px;
-          padding: 34px 32px 28px;
-          border-radius: 24px;
-          background:
-            radial-gradient(120% 120% at 20% 0%, rgba(24,247,255,.12), transparent 50%),
-            radial-gradient(100% 100% at 100% 100%, rgba(255,59,245,.10), transparent 50%),
-            linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04));
-          border: 1px solid rgba(24, 247, 255, 0.22);
-          box-shadow: 0 24px 90px rgba(0, 0, 0, 0.62), 0 0 32px rgba(24, 247, 255, 0.08);
-          text-align: left;
-        }
-
-        .accesskey-card .logo-area {
-          margin-bottom: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-        }
-
-        .accesskey-card .logo-badge {
-          width: 52px;
-          height: 52px;
-          border-radius: 16px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, rgba(24,247,255,.18), rgba(255,59,245,.14));
-          border: 1px solid rgba(24,247,255,.28);
-          box-shadow: inset 0 0 22px rgba(24,247,255,.08), 0 0 24px rgba(24,247,255,.08);
-        }
-
-        .accesskey-card .key-tag {
-          padding: 8px 12px;
-          border-radius: 999px;
-          border: 1px solid rgba(255,255,255,.12);
-          background: rgba(255,255,255,.05);
-          color: rgba(255,255,255,.66);
-          font-size: 12px;
-          letter-spacing: .8px;
-          text-transform: uppercase;
-        }
-
-        .accesskey-card h2 {
-          font-size: 24px;
-          font-weight: 700;
-          margin: 0 0 8px;
-          color: #fff;
-          text-shadow: 0 0 20px rgba(24,247,255,.18);
-        }
-
-        .accesskey-card p {
-          color: var(--muted);
-          font-size: 14px;
-          line-height: 1.65;
-          margin: 0 0 24px;
-        }
-
-        .accesskey-row {
-          display: flex;
-          align-items: stretch;
-          gap: 10px;
-        }
-
-        .accesskey-row .login-input {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .toggle-visibility-btn {
-          min-width: 92px;
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,.12);
-          background: rgba(255,255,255,.06);
-          color: rgba(255,255,255,.84);
-          font-size: 13px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all .2s ease;
-        }
-
-        .toggle-visibility-btn:hover {
-          border-color: rgba(24,247,255,.34);
-          color: var(--neon-cyan);
-          box-shadow: 0 0 0 4px rgba(24,247,255,.08);
-        }
-
-        .accesskey-helper {
-          margin-top: 12px;
-          color: rgba(255,255,255,.52);
-          font-size: 12px;
-          line-height: 1.6;
-        }
-
-        .accesskey-error {
-          min-height: 20px;
-          margin-top: 14px;
-          color: var(--danger);
-          font-size: 13px;
-          opacity: 0;
-          transition: opacity .2s ease;
-        }
-
-        .accesskey-error.visible {
-          opacity: 1;
-        }
-
       </style>
 </head>
 <body>
@@ -975,35 +848,6 @@
       
       <button class="login-btn" id="loginBtn">进入系统</button>
       <div class="error-msg" id="errorMsg">无效的用户名或密码</div>
-    </div>
-  </div>
-
-  <div class="accesskey-overlay" id="accessKeyOverlay" aria-modal="true" role="dialog">
-    <div class="accesskey-card" id="accessKeyCard">
-      <div class="logo-area">
-        <div class="logo-badge" aria-hidden="true">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 2l-2 2m-7.61 7.61a2 2 0 1 1-2.83-2.83l6.06-6.06a4 4 0 1 1 5.66 5.66l-6.06 6.06a4 4 0 0 1-5.66 0l-.71-.71"></path>
-            <path d="M7.5 12.5l4 4"></path>
-            <path d="M5 15l-2 2"></path>
-          </svg>
-        </div>
-        <span class="key-tag">Secure Session</span>
-      </div>
-      <h2>输入 Access Key</h2>
-      <p>请输入本次会话使用的豆包 Access Key。密钥仅保存在当前浏览器会话中，刷新页面无需重新填写，关闭标签页后会自动失效。</p>
-
-      <div class="login-field">
-        <label for="accessKeyInput">Access Key</label>
-        <div class="accesskey-row">
-          <input type="password" id="accessKeyInput" class="login-input" placeholder="请输入 Access Key" autocomplete="off" spellcheck="false">
-          <button class="toggle-visibility-btn" id="toggleAccessKeyBtn" type="button" aria-pressed="false">显示</button>
-        </div>
-        <div class="accesskey-helper">未填写 Access Key 前无法关闭此弹窗。确认后会写入 <code>DOUBAO_CFG.ACCESS_TOKEN</code> 并缓存到 <code>sessionStorage</code>。</div>
-        <div class="accesskey-error" id="accessKeyError">请输入有效的 Access Key</div>
-      </div>
-
-      <button class="login-btn" id="accessKeyConfirmBtn" type="button">确认并继续</button>
     </div>
   </div>
 
@@ -1047,28 +891,8 @@
         <div class="transcript" id="transcript" aria-live="polite"></div>
 
         <div class="voiceHint">
-          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>（<code>wss://openspeech.bytedance.com/api/v3/realtime/dialogue</code>），ASR 文本与模型回复将自动驱动上方 LED 表情切换。<br/>
-          <span class="tiny">提示：浏览器需要授权麦克风权限；首次连接可能需要几秒；浏览器 WebSocket 不支持自定义 Header，将通过 query 参数携带鉴权字段。</span>
-        </div>
-      </section>
-
-      <section class="panel displayPanel">
-        <div class="status">
-          <div class="emotion" id="emotionLabel">🙂 当前情绪：<span style="color:var(--muted); font-weight:600">等待分析</span></div>
-          <div class="legend">
-            <div class="pill"><span class="mini"></span><span>像素发光</span></div>
-            <div class="pill"><span class="mini" style="background:var(--neon-lime); box-shadow:0 0 16px rgba(182,255,74,.35)"></span><span>扫描线</span></div>
-            <div class="pill"><span class="mini" style="background:var(--warn); box-shadow:0 0 16px rgba(255,176,46,.35)"></span><span>轻微闪烁</span></div>
-          </div>
-        </div>
-
-        <div class="screenWrap" id="screenWrap">
-          <canvas id="screen" width="1600" height="900" aria-label="LED dot matrix" role="img"></canvas>
-        </div>
-
-        <div class="footer">
-          12 种预设表情：基础情绪（快乐/悲伤/愤怒/恐惧惊讶/厌恶）＋交互状态（专注/思考/确认/困惑）＋社交信号（眨眼/困倦/庆祝）。
-          <div class="tiny">说明：情绪分析使用前端规则引擎（关键词 + 标点语气 + 轻量语义规则），并给出一个最匹配结果。</div>
+          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>，页面会先连接本地代理 <code>ws://localhost:8765</code>，再由代理转发到云端服务；ASR 文本与模型回复将自动驱动上方 LED 表情切换。<br/>
+          <span class="tiny">提示：请先启动本地 Node.js WebSocket 代理，再打开当前页面；浏览器需要授权麦克风权限；首次连接可能需要几秒。</span>
         </div>
       </section>
 
@@ -1092,6 +916,26 @@
         <div class="chips" id="chips"></div>
         <div class="hint">提示：按 <span class="kbd">Enter</span> 也可直接分析（<span class="kbd">Shift</span>+<span class="kbd">Enter</span> 换行）。页面完全在本地运行：不上传你的文本。</div>
       </section>
+
+      <section class="panel displayPanel">
+        <div class="status">
+          <div class="emotion" id="emotionLabel">🙂 当前情绪：<span style="color:var(--muted); font-weight:600">等待分析</span></div>
+          <div class="legend">
+            <div class="pill"><span class="mini"></span><span>像素发光</span></div>
+            <div class="pill"><span class="mini" style="background:var(--neon-lime); box-shadow:0 0 16px rgba(182,255,74,.35)"></span><span>扫描线</span></div>
+            <div class="pill"><span class="mini" style="background:var(--warn); box-shadow:0 0 16px rgba(255,176,46,.35)"></span><span>轻微闪烁</span></div>
+          </div>
+        </div>
+
+        <div class="screenWrap" id="screenWrap">
+          <canvas id="screen" width="1600" height="900" aria-label="LED dot matrix" role="img"></canvas>
+        </div>
+
+        <div class="footer">
+          12 种预设表情：基础情绪（快乐/悲伤/愤怒/恐惧惊讶/厌恶）＋交互状态（专注/思考/确认/困惑）＋社交信号（眨眼/困倦/庆祝）。
+          <div class="tiny">说明：情绪分析使用前端规则引擎（关键词 + 标点语气 + 轻量语义规则），并给出一个最匹配结果。</div>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -1099,7 +943,6 @@
   (function(){
     // --------- Login Logic ---------
     const SKIP_LOGIN = true; // 暂时禁用登录弹窗
-    const ACCESS_KEY_STORAGE_KEY = 'doubaoAccessKey';
     const USERS = {
       'libai': 'ewan000',
       'dufu': 'ewan111',
@@ -1112,70 +955,10 @@
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const errorMsg = document.getElementById('errorMsg');
-    const accessKeyOverlay = document.getElementById('accessKeyOverlay');
-    const accessKeyCard = document.getElementById('accessKeyCard');
-    const accessKeyInput = document.getElementById('accessKeyInput');
-    const accessKeyError = document.getElementById('accessKeyError');
-    const accessKeyConfirmBtn = document.getElementById('accessKeyConfirmBtn');
-    const toggleAccessKeyBtn = document.getElementById('toggleAccessKeyBtn');
-
-    function hideLoginOverlay() {
-      loginOverlay.classList.add('hidden');
-    }
-
-    function showAccessKeyOverlay() {
-      accessKeyOverlay.classList.remove('hidden');
-      requestAnimationFrame(() => accessKeyInput.focus());
-    }
-
-    function hideAccessKeyOverlay() {
-      accessKeyOverlay.classList.add('hidden');
-    }
-
-    function showAccessKeyError(message = '请输入有效的 Access Key') {
-      accessKeyError.textContent = message;
-      accessKeyCard.classList.remove('shake');
-      void accessKeyCard.offsetWidth;
-      accessKeyCard.classList.add('shake');
-      accessKeyError.classList.add('visible');
-    }
-
-    function clearAccessKeyError() {
-      accessKeyError.classList.remove('visible');
-    }
-
-    function applyAccessKey(value) {
-      const normalized = value.trim();
-      DOUBAO_CFG.ACCESS_TOKEN = normalized;
-      sessionStorage.setItem(ACCESS_KEY_STORAGE_KEY, normalized);
-      clearAccessKeyError();
-      hideAccessKeyOverlay();
-    }
-
-    function ensureAccessKey() {
-      const cachedAccessKey = sessionStorage.getItem(ACCESS_KEY_STORAGE_KEY);
-      if (cachedAccessKey && cachedAccessKey.trim()) {
-        DOUBAO_CFG.ACCESS_TOKEN = cachedAccessKey.trim();
-        hideAccessKeyOverlay();
-        return true;
-      }
-      showAccessKeyOverlay();
-      return false;
-    }
-
-    function confirmAccessKey() {
-      const value = accessKeyInput.value.trim();
-      if (!value) {
-        showAccessKeyError();
-        return;
-      }
-      applyAccessKey(value);
-    }
 
     function checkLogin() {
       if (SKIP_LOGIN || sessionStorage.getItem('isLoggedIn') === 'true') {
-        hideLoginOverlay();
-        ensureAccessKey();
+        loginOverlay.classList.add('hidden');
       }
     }
 
@@ -1185,8 +968,7 @@
 
       if (USERS[u] && USERS[u] === p) {
         sessionStorage.setItem('isLoggedIn', 'true');
-        hideLoginOverlay();
-        ensureAccessKey();
+        loginOverlay.classList.add('hidden');
       } else {
         loginCard.classList.remove('shake');
         void loginCard.offsetWidth; // trigger reflow
@@ -1203,18 +985,7 @@
       });
     });
 
-    accessKeyConfirmBtn.addEventListener('click', confirmAccessKey);
-    accessKeyInput.addEventListener('input', clearAccessKeyError);
-    accessKeyInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') confirmAccessKey();
-    });
-    toggleAccessKeyBtn.addEventListener('click', () => {
-      const shouldShow = accessKeyInput.type === 'password';
-      accessKeyInput.type = shouldShow ? 'text' : 'password';
-      toggleAccessKeyBtn.textContent = shouldShow ? '隐藏' : '显示';
-      toggleAccessKeyBtn.setAttribute('aria-pressed', String(shouldShow));
-      accessKeyInput.focus();
-    });
+    checkLogin();
 
     const SIZE = 24; // LED grid
     const canvas = document.getElementById('screen');
@@ -1984,25 +1755,16 @@
     // =========================================================
     // ============ 豆包端到端实时语音大模型 接入 =================
     // =========================================================
-    // 协议参考：https://www.volcengine.com/docs/6561/1594356
-    // 由于浏览器 WebSocket API 不支持自定义 Header，
-    // 这里使用 query 字符串方式携带鉴权字段（与字节官方
-    // byted-ailab-speech-sdk 中前端的鉴权方式一致）。
+    // 浏览器先连接本地代理，再由代理在握手阶段注入鉴权 Header。
     // ---------------------------------------------------------
     const DOUBAO_CFG = {
-      WS_URL: 'wss://openspeech.bytedance.com/api/v3/realtime/dialogue',
-      APP_ID: '6415430121',
-      ACCESS_TOKEN: '',
-      RESOURCE_ID: 'volc.speech.dialog',
-      APP_KEY: 'PlgvMymc7f3tQnJ6',
+      WS_URL: 'wss://localhost:8765',
       // TTS 输出请求 PCM s16le 24kHz 单声道，便于浏览器直接播放
       TTS_FORMAT: 'pcm_s16le',
       TTS_SAMPLE_RATE: 24000,
       MIC_SAMPLE_RATE: 16000,   // 服务端要求 16kHz / 16bit / 单声道
       CHUNK_MS: 40              // 客户端音频包大小（ms）
     };
-
-    checkLogin();
 
     // 协议事件常量
     const EVT = {
@@ -2379,7 +2141,6 @@
     class DoubaoRealtimeClient{
       constructor(){
         this.ws = null;
-        this.connectId = uuid();
         this.sessionId = null;
         this.sessionIdBytes = null;
         this.sessionStarted = false;
@@ -2393,36 +2154,18 @@
         this._currentUserMsgId = null;
 
         this._closing = false;
-        this._stopPromise = null;
-        this._closePromise = null;
-        this._sessionFinishWaiters = [];
-        this._finishSessionRequested = false;
-        this._finishConnectionRequested = false;
-      }
-
-      buildAuthUrl(){
-        // 将官方 Header 鉴权字段以 query 参数形式传入（snake_case）
-        const params = new URLSearchParams({
-          api_app_id: DOUBAO_CFG.APP_ID,
-          api_access_key: DOUBAO_CFG.ACCESS_TOKEN,
-          api_resource_id: DOUBAO_CFG.RESOURCE_ID,
-          api_app_key: DOUBAO_CFG.APP_KEY,
-          api_connect_id: this.connectId
-        });
-        return `${DOUBAO_CFG.WS_URL}?${params.toString()}`;
       }
 
       async connect(){
         if(this.ws && this.ws.readyState === WebSocket.OPEN) return;
         setVoiceState('connecting','建立连接…');
-        appendMsg('sys','正在连接火山引擎豆包实时语音服务…');
+        appendMsg('sys','正在连接本地语音代理服务…');
 
         await this.player.resume();
 
         return new Promise((resolve, reject)=>{
           let opened = false;
-          const url = this.buildAuthUrl();
-          const ws = new WebSocket(url);
+          const ws = new WebSocket(DOUBAO_CFG.WS_URL);
           ws.binaryType = 'arraybuffer';
           this.ws = ws;
 
@@ -2481,11 +2224,7 @@
         // 错误帧
         if(msgType === 0b1111){
           const txt = payloadObj && payloadObj.error ? payloadObj.error : new TextDecoder().decode(payloadBytes||new Uint8Array());
-          const isIdleTimeoutNoise = f.errorCode === 55000001 || txt.includes('DialogAudioIdleTimeoutError');
           console.error('[Doubao] error frame:', f.errorCode, txt);
-          if(isIdleTimeoutNoise){
-            return;
-          }
           appendMsg('sys', `❌ 服务端错误 code=${f.errorCode}: ${txt}`);
           setVoiceState('error');
           return;
@@ -2493,21 +2232,15 @@
         switch(event){
           case EVT.ConnectionStarted:
             this.connStarted = true;
-            this._finishConnectionRequested = false;
             // 立即发起 StartSession
             this.sessionId = uuid();
             this.sessionIdBytes = new TextEncoder().encode(this.sessionId);
             this._sendStartSession();
             break;
           case EVT.ConnectionFailed:
-            this._finishConnectionRequested = false;
             appendMsg('sys', `❌ 建立连接失败：${payloadObj?.error || ''}`);
             setVoiceState('error');
             this._connectReject && this._connectReject(new Error('ConnectionFailed'));
-            break;
-          case EVT.ConnectionFinished:
-            this.connStarted = false;
-            this._finishConnectionRequested = false;
             break;
           case EVT.SessionStarted:
             this.sessionStarted = true;
@@ -2522,11 +2255,6 @@
             break;
           case EVT.SessionFinished:
             this.sessionStarted = false;
-            this._finishSessionRequested = false;
-            // 唤醒所有等待 SessionFinished 的流程
-            const waiters = this._sessionFinishWaiters;
-            this._sessionFinishWaiters = [];
-            waiters.forEach(fn => { try{ fn(); }catch(e){} });
             break;
           case EVT.ASRInfo:
             // 用户开始说话
@@ -2570,15 +2298,9 @@
               else setVoiceState('ready');
             });
             break;
-          case EVT.DialogCommonError: {
-            const code = payloadObj?.code || payloadObj?.status_code;
-            const message = payloadObj?.message || '';
-            const isIdleTimeoutNoise = code === 55000001 || message.includes('DialogAudioIdleTimeoutError');
-            if(!isIdleTimeoutNoise){
-              appendMsg('sys', `⚠️ 对话错误：${message} (status=${payloadObj?.status_code||''})`);
-            }
+          case EVT.DialogCommonError:
+            appendMsg('sys', `⚠️ 对话错误：${payloadObj?.message || ''} (status=${payloadObj?.status_code||''})`);
             break;
-          }
           default:
             // 其它事件忽略
             break;
@@ -2687,65 +2409,30 @@
           throw err;
         }
       }
-      async _finishSessionAndConnection({ closeSocket=false } = {}){
-        if(this._stopPromise) return this._stopPromise;
-        this._stopPromise = (async ()=>{
-          try{
-            try{ this.player.stop(); }catch(e){}
-
-            const wsOpen = this.ws && this.ws.readyState === WebSocket.OPEN;
-            if(wsOpen && this.sessionStarted && !this._finishSessionRequested){
-              this._finishSessionRequested = true;
-              this._send(EVT.FinishSession, jsonPayload({}), { hasSession:true });
-              await new Promise((resolve)=>{
-                const done = ()=> resolve();
-                this._sessionFinishWaiters.push(done);
-                setTimeout(done, 5000);
-              });
-            }
-
-            if(this.mic){
-              this.mic.stop();
-              this.mic = null;
-            }
-            this.recording = false;
-
-            if(wsOpen && this.connStarted && !this._finishConnectionRequested){
-              this._finishConnectionRequested = true;
-              this._send(EVT.FinishConnection, jsonPayload({}), { hasSession:false });
-            }
-
-            if(closeSocket){
-              try{ this.ws && this.ws.close(); }catch(e){}
-              this.ws = null;
-              this.sessionStarted = false;
-              this.connStarted = false;
-              setVoiceState('idle','已断开');
-            } else {
-              setVoiceState('idle');
-            }
-          } finally {
-            this._stopPromise = null;
-          }
-        })();
-        return this._stopPromise;
-      }
-
-      async stopRecording(){
-        return this._finishSessionAndConnection({ closeSocket:true });
+      stopRecording(){
+        if(this.mic){
+          this.mic.stop();
+          this.mic = null;
+        }
+        this.recording = false;
+        if(this.sessionStarted) setVoiceState('ready');
+        else setVoiceState('idle');
       }
 
       async close(){
-        if(this._closePromise) return this._closePromise;
         this._closing = true;
-        this._closePromise = (async ()=>{
-          try{
-            await this._finishSessionAndConnection({ closeSocket:true });
-          } finally {
-            this._closePromise = null;
+        try{ this.stopRecording(); }catch(e){}
+        try{ this.player.stop(); }catch(e){}
+        try{
+          if(this.ws && this.ws.readyState===WebSocket.OPEN && this.sessionStarted){
+            this._send(EVT.FinishSession, jsonPayload({}), { hasSession:true });
+            this._send(EVT.FinishConnection, jsonPayload({}), { hasSession:false });
           }
-        })();
-        return this._closePromise;
+        }catch(e){}
+        try{ this.ws && this.ws.close(); }catch(e){}
+        this.ws = null;
+        this.sessionStarted = false;
+        this.connStarted = false;
       }
     }
 
@@ -2760,14 +2447,8 @@
           doubaoClient = new DoubaoRealtimeClient();
         }
         if(doubaoClient.recording){
-          // 停止说话并按协议顺序完成会话关闭
-          micBtnLabel.textContent = '停止中…';
-          micBtn.disabled = true;
-          try{
-            await doubaoClient.stopRecording();
-          } finally {
-            micBtn.disabled = false;
-          }
+          // 停止收音（保持连接，便于下一次复用）
+          doubaoClient.stopRecording();
           micBtn.classList.remove('recording');
           micBtnLabel.textContent = '开始说话';
           micBtn.setAttribute('aria-pressed','false');
