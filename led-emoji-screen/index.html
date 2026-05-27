@@ -942,6 +942,7 @@
   <script>
   (function(){
     // --------- Login Logic ---------
+    const SKIP_LOGIN = true; // 暂时禁用登录弹窗
     const USERS = {
       'libai': 'ewan000',
       'dufu': 'ewan111',
@@ -956,7 +957,7 @@
     const errorMsg = document.getElementById('errorMsg');
 
     function checkLogin() {
-      if (sessionStorage.getItem('isLoggedIn') === 'true') {
+      if (SKIP_LOGIN || sessionStorage.getItem('isLoggedIn') === 'true') {
         loginOverlay.classList.add('hidden');
       }
     }
