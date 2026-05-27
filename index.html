@@ -352,6 +352,208 @@
       line-height:1.6;
     }
 
+    /* ---------- Voice Chat Panel ---------- */
+    .voicePanel{
+      padding:18px;
+      position:relative;
+      overflow:hidden;
+    }
+    .voicePanel:before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:
+        radial-gradient(700px 320px at 80% 20%, rgba(24,247,255,.18), transparent 55%),
+        radial-gradient(600px 320px at 10% 80%, rgba(255,59,245,.14), transparent 55%);
+      opacity:.9;
+      filter: blur(2px);
+      pointer-events:none;
+      mask: linear-gradient(180deg, rgba(0,0,0,.75), transparent 80%);
+    }
+    .voicePanel > *{position:relative}
+
+    .voiceHeader{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .voiceTitle{
+      font-size:15px;
+      font-weight:700;
+      letter-spacing:.3px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .voiceTitle .ico{
+      width:28px;height:28px;
+      display:inline-flex;align-items:center;justify-content:center;
+      border-radius:9px;
+      background: linear-gradient(135deg, rgba(24,247,255,.25), rgba(255,59,245,.18));
+      border: 1px solid rgba(24,247,255,.3);
+      box-shadow: 0 0 18px rgba(24,247,255,.2) inset;
+    }
+    .voiceState{
+      margin-left:auto;
+      display:flex;align-items:center;gap:8px;
+      padding:7px 11px;
+      border-radius:999px;
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.14);
+      font-size:12px;
+      color: rgba(255,255,255,.78);
+    }
+    .voiceState .stateDot{
+      width:8px;height:8px;border-radius:99px;
+      background:#888;
+      box-shadow: 0 0 10px rgba(255,255,255,.2);
+    }
+    .voiceState[data-state="idle"] .stateDot{background:#888}
+    .voiceState[data-state="connecting"] .stateDot{background:var(--warn);box-shadow:0 0 14px rgba(255,176,46,.55);animation:pulse 1.2s infinite}
+    .voiceState[data-state="ready"] .stateDot{background:var(--ok);box-shadow:0 0 14px rgba(107,255,182,.5)}
+    .voiceState[data-state="recording"] .stateDot{background:var(--danger);box-shadow:0 0 14px rgba(255,47,98,.6);animation:pulse 1s infinite}
+    .voiceState[data-state="speaking"] .stateDot{background:var(--neon-cyan);box-shadow:0 0 14px rgba(24,247,255,.6);animation:pulse 1.2s infinite}
+    .voiceState[data-state="error"] .stateDot{background:var(--danger);box-shadow:0 0 14px rgba(255,47,98,.6)}
+
+    .voiceControls{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .micBtn{
+      border:0;
+      border-radius: 999px;
+      padding: 14px 22px 14px 18px;
+      cursor:pointer;
+      color: rgba(0,0,0,.92);
+      font-weight:700;
+      letter-spacing:.2px;
+      font-size:14px;
+      background: linear-gradient(135deg, var(--neon-cyan), rgba(182,255,74,.95));
+      box-shadow: 0 12px 30px rgba(24,247,255,.25), 0 12px 28px rgba(182,255,74,.10);
+      transition: transform .15s ease, filter .15s ease, background .25s ease, box-shadow .25s ease;
+      display:flex;align-items:center;gap:10px;
+      min-width:170px;justify-content:center;
+    }
+    .micBtn:hover{transform:translateY(-1px);filter:saturate(1.06)}
+    .micBtn:active{transform:translateY(0) scale(.99)}
+    .micBtn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .micBtn.recording{
+      background: linear-gradient(135deg, var(--danger), #ff7aa1);
+      color: #fff;
+      box-shadow: 0 12px 32px rgba(255,47,98,.35);
+    }
+    .micBtn .micGlow{
+      width:10px;height:10px;border-radius:99px;
+      background: rgba(0,0,0,.55);
+      box-shadow: 0 0 12px rgba(0,0,0,.4);
+    }
+    .micBtn.recording .micGlow{
+      background:#fff;
+      box-shadow: 0 0 14px rgba(255,255,255,.95);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    .voiceMeter{
+      flex:1;
+      min-width:160px;
+      height:10px;
+      border-radius:99px;
+      background: rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+      position:relative;
+    }
+    .voiceMeter > .level{
+      position:absolute;
+      left:0;top:0;bottom:0;
+      width:0%;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-lime));
+      box-shadow: 0 0 14px rgba(24,247,255,.45);
+      transition: width .08s linear;
+    }
+
+    .transcript{
+      margin-top:14px;
+      max-height:280px;
+      overflow-y:auto;
+      padding:14px;
+      border-radius:14px;
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.10);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      font-size:13.5px;
+      line-height:1.55;
+    }
+    .transcript:empty::before{
+      content:"💬 等待对话开始… 点击 “开始说话” 即可与豆包实时语音模型对话。";
+      color: rgba(255,255,255,.45);
+      font-size:13px;
+    }
+    .transcript::-webkit-scrollbar{width:8px}
+    .transcript::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:99px}
+
+    .msg{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .msg .who{
+      flex:0 0 auto;
+      width:48px;
+      font-size:11px;
+      letter-spacing:.4px;
+      font-weight:700;
+      padding:4px 6px;
+      border-radius:6px;
+      text-align:center;
+      margin-top:1px;
+    }
+    .msg.user .who{
+      color: var(--neon-cyan);
+      border:1px solid rgba(24,247,255,.35);
+      background: rgba(24,247,255,.08);
+    }
+    .msg.bot .who{
+      color: var(--neon-mag);
+      border:1px solid rgba(255,59,245,.35);
+      background: rgba(255,59,245,.08);
+    }
+    .msg.sys .who{
+      color: var(--muted);
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.05);
+    }
+    .msg .body{
+      flex:1;
+      color: rgba(255,255,255,.88);
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .msg.sys .body{color:rgba(255,255,255,.55);font-size:12.5px}
+    .msg.user .body.interim{opacity:.65;font-style:italic}
+
+    .voiceHint{
+      margin-top:10px;
+      color: var(--muted);
+      font-size:12px;
+      line-height:1.55;
+    }
+    .voiceHint code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      padding:1px 6px;
+      border-radius:6px;
+      background: rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.1);
+      font-size:11.5px;
+    }
+    
+
     .kbd{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       padding:2px 6px;
@@ -659,6 +861,41 @@
     </header>
 
     <div class="grid">
+      <section class="panel voicePanel">
+        <div class="voiceHeader">
+          <div class="voiceTitle">
+            <span class="ico">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--neon-cyan)">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+              </svg>
+            </span>
+            <span>豆包实时语音对话</span>
+          </div>
+          <div class="voiceState" id="voiceState" data-state="idle">
+            <span class="stateDot"></span>
+            <span id="voiceStateText">未连接</span>
+          </div>
+        </div>
+
+        <div class="voiceControls">
+          <button class="micBtn" id="micBtn" type="button" aria-pressed="false">
+            <span class="micGlow"></span>
+            <span id="micBtnLabel">开始说话</span>
+          </button>
+          <div class="voiceMeter" title="麦克风音量"><div class="level" id="voiceLevel"></div></div>
+        </div>
+
+        <div class="transcript" id="transcript" aria-live="polite"></div>
+
+        <div class="voiceHint">
+          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>（<code>wss://openspeech.bytedance.com/api/v3/realtime/dialogue</code>），ASR 文本与模型回复将自动驱动上方 LED 表情切换。<br/>
+          <span class="tiny">提示：浏览器需要授权麦克风权限；首次连接可能需要几秒；浏览器 WebSocket 不支持自定义 Header，将通过 query 参数携带鉴权字段。</span>
+        </div>
+      </section>
+
       <section class="panel inputPanel">
         <label for="text">AI 文字输入</label>
         <textarea id="text" placeholder="例如：\n- 太棒了！我们终于搞定了！\n- I feel anxious and scared about what will happen next.\n- 我不太理解你的意思，能再解释一下吗？"></textarea>
@@ -1513,6 +1750,754 @@
 
     // initial state
     setEmotion('focus');
+
+    // =========================================================
+    // ============ 豆包端到端实时语音大模型 接入 =================
+    // =========================================================
+    // 协议参考：https://www.volcengine.com/docs/6561/1594356
+    // 由于浏览器 WebSocket API 不支持自定义 Header，
+    // 这里使用 query 字符串方式携带鉴权字段（与字节官方
+    // byted-ailab-speech-sdk 中前端的鉴权方式一致）。
+    // ---------------------------------------------------------
+    const DOUBAO_CFG = {
+      WS_URL: 'wss://openspeech.bytedance.com/api/v3/realtime/dialogue',
+      APP_ID: '6415430121',
+      ACCESS_TOKEN: '9oO3d6NCdV0FlJMIhpft5gn2gEmmme1W',
+      RESOURCE_ID: 'volc.speech.dialog',
+      APP_KEY: 'PlgvMymc7f3tQnJ6',
+      // TTS 输出请求 PCM s16le 24kHz 单声道，便于浏览器直接播放
+      TTS_FORMAT: 'pcm_s16le',
+      TTS_SAMPLE_RATE: 24000,
+      MIC_SAMPLE_RATE: 16000,   // 服务端要求 16kHz / 16bit / 单声道
+      CHUNK_MS: 40              // 客户端音频包大小（ms）
+    };
+
+    // 协议事件常量
+    const EVT = {
+      // 客户端事件
+      StartConnection: 1,
+      FinishConnection: 2,
+      StartSession: 100,
+      FinishSession: 102,
+      TaskRequest: 200,
+      // 服务端事件
+      ConnectionStarted: 50,
+      ConnectionFailed: 51,
+      ConnectionFinished: 52,
+      SessionStarted: 150,
+      SessionFinished: 152,
+      SessionFailed: 153,
+      TTSSentenceStart: 350,
+      TTSSentenceEnd: 351,
+      TTSResponse: 352,
+      TTSEnded: 359,
+      ASRInfo: 450,
+      ASRResponse: 451,
+      ASREnded: 459,
+      ChatResponse: 550,
+      ChatEnded: 559,
+      DialogCommonError: 599
+    };
+
+    // ---- DOM 引用 ----
+    const micBtn = document.getElementById('micBtn');
+    const micBtnLabel = document.getElementById('micBtnLabel');
+    const voiceStateEl = document.getElementById('voiceState');
+    const voiceStateText = document.getElementById('voiceStateText');
+    const voiceLevelEl = document.getElementById('voiceLevel');
+    const transcriptEl = document.getElementById('transcript');
+
+    // ---- 工具：UUID（v4）----
+    function uuid(){
+      const a = new Uint8Array(16);
+      crypto.getRandomValues(a);
+      a[6] = (a[6] & 0x0f) | 0x40;
+      a[8] = (a[8] & 0x3f) | 0x80;
+      const h = [...a].map(b=>b.toString(16).padStart(2,'0')).join('');
+      return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+    }
+
+    // ---- 状态机 ----
+    function setVoiceState(state, text){
+      const map = {
+        idle:'未连接',
+        connecting:'连接中…',
+        ready:'已就绪',
+        recording:'正在收音',
+        speaking:'AI 回复中',
+        error:'连接异常'
+      };
+      voiceStateEl.dataset.state = state;
+      voiceStateText.textContent = text || map[state] || state;
+    }
+
+    // ---- 文本面板 ----
+    function appendMsg(who, text, opts={}){
+      // who: 'user' | 'bot' | 'sys'
+      const wrap = document.createElement('div');
+      wrap.className = `msg ${who}`;
+      const whoEl = document.createElement('div');
+      whoEl.className = 'who';
+      whoEl.textContent = who==='user' ? 'YOU' : (who==='bot' ? 'BOT' : 'SYS');
+      const body = document.createElement('div');
+      body.className = 'body' + (opts.interim ? ' interim' : '');
+      body.textContent = text;
+      wrap.appendChild(whoEl);
+      wrap.appendChild(body);
+      if(opts.id) wrap.dataset.mid = opts.id;
+      transcriptEl.appendChild(wrap);
+      transcriptEl.scrollTop = transcriptEl.scrollHeight;
+      return body;
+    }
+    function findOrCreateMsg(who, id){
+      let el = transcriptEl.querySelector(`.msg.${who}[data-mid="${id}"] .body`);
+      if(el) return el;
+      const body = appendMsg(who, '', {id});
+      return body;
+    }
+    function removeInterim(){
+      const interim = transcriptEl.querySelectorAll('.msg.user .body.interim');
+      interim.forEach(b => b.parentElement.remove());
+    }
+
+    // =========================================================
+    // ================ 二进制协议编/解码工具 ====================
+    // =========================================================
+    // 协议头：4 字节
+    //   byte0: high 4bit = protocol version(0x1), low 4bit = header size(0x1)
+    //   byte1: high 4bit = message type, low 4bit = type-specific flags
+    //   byte2: high 4bit = serialization (0=raw, 1=json), low 4bit = compression(0=none)
+    //   byte3: 0x00 reserved
+    // 然后按 type-specific flags 顺序拼接 optional 字段（event/session id等）
+    // 然后 payload size (4B, BE) + payload
+    function buildFrame({msgType, flags, event, sessionId, serialization, payloadBytes}){
+      // 计算 optional 大小
+      let optSize = 0;
+      let hasEvent = (flags & 0b0100) === 0b0100;
+      if(hasEvent){
+        optSize += 4; // event
+        if(sessionId){
+          optSize += 4 + sessionId.length; // session id size + body
+        }
+      }
+      // 头(4) + optional + payload size(4) + payload
+      const payload = payloadBytes || new Uint8Array(0);
+      const total = 4 + optSize + 4 + payload.length;
+      const buf = new ArrayBuffer(total);
+      const view = new DataView(buf);
+      const bytes = new Uint8Array(buf);
+
+      // header
+      bytes[0] = (0x1 << 4) | 0x1;                       // version=1, headerSize=1 (4 bytes)
+      bytes[1] = ((msgType & 0x0f) << 4) | (flags & 0x0f);
+      bytes[2] = (((serialization??1) & 0x0f) << 4) | 0x00; // compression=0
+      bytes[3] = 0x00;
+
+      let off = 4;
+      if(hasEvent){
+        view.setInt32(off, event|0, false); off += 4;
+        if(sessionId){
+          // session id size + bytes
+          view.setUint32(off, sessionId.length, false); off += 4;
+          bytes.set(sessionId, off); off += sessionId.length;
+        }
+      }
+      view.setUint32(off, payload.length, false); off += 4;
+      if(payload.length) bytes.set(payload, off);
+      return buf;
+    }
+
+    function jsonPayload(obj){
+      return new TextEncoder().encode(JSON.stringify(obj || {}));
+    }
+
+    function parseFrame(buf){
+      const view = new DataView(buf);
+      const bytes = new Uint8Array(buf);
+      if(bytes.length < 4) return null;
+      const headerSize = (bytes[0] & 0x0f) * 4;
+      const msgType = (bytes[1] >> 4) & 0x0f;
+      const flags   = bytes[1] & 0x0f;
+      const serialization = (bytes[2] >> 4) & 0x0f;
+
+      let off = headerSize;
+      let event = null, sessionId = null, errorCode = null;
+
+      // 错误帧
+      if(msgType === 0b1111){
+        errorCode = view.getUint32(off, false); off += 4;
+      }
+
+      // 顺序：sequence (0b0001/0b0010/0b0011) -> event(0b0100) -> connect/session
+      // 这里只关注服务端响应常用的：event + sessionId
+      const hasEvent = (flags & 0b0100) === 0b0100;
+      if(hasEvent){
+        event = view.getInt32(off, false); off += 4;
+        // 服务端事件如果是 session 类，则带 session id
+        const isSessionEvt = isSessionEvent(event);
+        if(isSessionEvt){
+          const sidLen = view.getUint32(off, false); off += 4;
+          sessionId = new TextDecoder().decode(bytes.subarray(off, off + sidLen));
+          off += sidLen;
+        }
+      }
+
+      // payload
+      const payloadLen = view.getUint32(off, false); off += 4;
+      const payload = bytes.subarray(off, off + payloadLen);
+
+      let payloadObj = null;
+      let payloadBytes = null;
+      if(serialization === 0b0001){
+        // JSON
+        try{ payloadObj = JSON.parse(new TextDecoder().decode(payload) || 'null'); }
+        catch(e){ payloadObj = null; }
+      } else {
+        // raw
+        payloadBytes = payload;
+      }
+      return { msgType, flags, event, sessionId, errorCode, payloadObj, payloadBytes };
+    }
+    function isSessionEvent(evt){
+      // Connect 类事件：50/51/52，无 sessionId
+      if(evt===EVT.ConnectionStarted || evt===EVT.ConnectionFailed || evt===EVT.ConnectionFinished) return false;
+      // 其它事件多数带 sessionId（Session 类、TTS、ASR、Chat）
+      return evt >= 100;
+    }
+
+    // =========================================================
+    // ============== 麦克风采集 + PCM 16kHz 16bit ===============
+    // =========================================================
+    class MicCapturer{
+      constructor(onPcmChunk){
+        this.onPcmChunk = onPcmChunk;
+        this.ctx = null;
+        this.stream = null;
+        this.sourceNode = null;
+        this.processor = null;
+        this.analyser = null;
+        this.chunkBuf = []; // pcm float32 缓冲
+        this.targetRate = DOUBAO_CFG.MIC_SAMPLE_RATE;
+        this.chunkSamples = Math.floor(this.targetRate * (DOUBAO_CFG.CHUNK_MS / 1000));
+        this._pendingResampled = new Float32Array(0);
+        this._meterRaf = 0;
+      }
+      async start(){
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          audio:{
+            channelCount:1,
+            sampleRate:16000,
+            echoCancellation:true,
+            noiseSuppression:true,
+            autoGainControl:true
+          }
+        });
+        const AC = window.AudioContext || window.webkitAudioContext;
+        // 不强制采样率：浏览器多数为 48000，本地手动重采样到 16k
+        this.ctx = new AC();
+        this.sourceNode = this.ctx.createMediaStreamSource(this.stream);
+
+        this.analyser = this.ctx.createAnalyser();
+        this.analyser.fftSize = 512;
+        this.sourceNode.connect(this.analyser);
+
+        // ScriptProcessor (兼容性最好；AudioWorklet 也可以，但代码量更大)
+        const bufSize = 4096;
+        this.processor = this.ctx.createScriptProcessor(bufSize, 1, 1);
+        this.processor.onaudioprocess = (e)=>{
+          const input = e.inputBuffer.getChannelData(0);
+          const resampled = resampleLinear(input, this.ctx.sampleRate, this.targetRate);
+          // 累积到固定块
+          const merged = new Float32Array(this._pendingResampled.length + resampled.length);
+          merged.set(this._pendingResampled, 0);
+          merged.set(resampled, this._pendingResampled.length);
+          let off = 0;
+          while(merged.length - off >= this.chunkSamples){
+            const slice = merged.subarray(off, off + this.chunkSamples);
+            const pcm = floatTo16BitPCM(slice);
+            this.onPcmChunk && this.onPcmChunk(pcm);
+            off += this.chunkSamples;
+          }
+          this._pendingResampled = merged.subarray(off);
+        };
+        this.sourceNode.connect(this.processor);
+        this.processor.connect(this.ctx.destination);
+
+        // 音量计
+        const tdata = new Uint8Array(this.analyser.fftSize);
+        const loop = ()=>{
+          if(!this.analyser) return;
+          this.analyser.getByteTimeDomainData(tdata);
+          let sum = 0;
+          for(let i=0;i<tdata.length;i++){
+            const v = (tdata[i]-128)/128;
+            sum += v*v;
+          }
+          const rms = Math.sqrt(sum/tdata.length);
+          const lv = Math.min(100, Math.max(0, rms*220));
+          voiceLevelEl.style.width = lv + '%';
+          this._meterRaf = requestAnimationFrame(loop);
+        };
+        this._meterRaf = requestAnimationFrame(loop);
+      }
+      stop(){
+        try{ this.processor && this.processor.disconnect(); }catch(e){}
+        try{ this.sourceNode && this.sourceNode.disconnect(); }catch(e){}
+        try{ this.analyser && this.analyser.disconnect(); }catch(e){}
+        try{ this.ctx && this.ctx.close(); }catch(e){}
+        if(this.stream){
+          this.stream.getTracks().forEach(t=>t.stop());
+        }
+        cancelAnimationFrame(this._meterRaf);
+        voiceLevelEl.style.width = '0%';
+        this.processor = this.sourceNode = this.analyser = this.ctx = this.stream = null;
+        this._pendingResampled = new Float32Array(0);
+      }
+    }
+
+    // 简单线性插值重采样
+    function resampleLinear(input, fromRate, toRate){
+      if(fromRate === toRate) return input;
+      const ratio = fromRate / toRate;
+      const outLen = Math.floor(input.length / ratio);
+      const out = new Float32Array(outLen);
+      for(let i=0;i<outLen;i++){
+        const idx = i * ratio;
+        const i0 = Math.floor(idx);
+        const i1 = Math.min(input.length-1, i0+1);
+        const t = idx - i0;
+        out[i] = input[i0]*(1-t) + input[i1]*t;
+      }
+      return out;
+    }
+    function floatTo16BitPCM(input){
+      const out = new Int16Array(input.length);
+      for(let i=0;i<input.length;i++){
+        let s = Math.max(-1, Math.min(1, input[i]));
+        out[i] = s < 0 ? s*0x8000 : s*0x7fff;
+      }
+      // 小端字节序（Int16Array 在所有现代主流浏览器都是小端，用 buffer 即可）
+      return new Uint8Array(out.buffer, out.byteOffset, out.byteLength);
+    }
+
+    // =========================================================
+    // ============== 服务端 PCM 音频流式播放 ===================
+    // =========================================================
+    class PcmPlayer{
+      constructor(sampleRate=24000){
+        this.sampleRate = sampleRate;
+        this.ctx = null;
+        this.queueTime = 0;
+        this._activeNodes = new Set();
+        this._onEnded = null;
+      }
+      _ensure(){
+        if(!this.ctx){
+          const AC = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AC({ sampleRate: this.sampleRate });
+          this.queueTime = this.ctx.currentTime;
+        }
+      }
+      async resume(){
+        this._ensure();
+        if(this.ctx.state === 'suspended') await this.ctx.resume();
+      }
+      enqueuePcm16(uint8){
+        this._ensure();
+        if(uint8.length < 2) return;
+        // uint8 -> int16 little endian
+        const aligned = uint8.length % 2 === 0
+          ? uint8
+          : uint8.subarray(0, uint8.length - (uint8.length % 2));
+        const i16 = new Int16Array(aligned.buffer.slice(aligned.byteOffset, aligned.byteOffset + aligned.byteLength));
+        const f32 = new Float32Array(i16.length);
+        for(let i=0;i<i16.length;i++) f32[i] = i16[i] / 0x8000;
+
+        const ab = this.ctx.createBuffer(1, f32.length, this.sampleRate);
+        ab.getChannelData(0).set(f32);
+        const src = this.ctx.createBufferSource();
+        src.buffer = ab;
+        src.connect(this.ctx.destination);
+        const now = this.ctx.currentTime;
+        const startAt = Math.max(now, this.queueTime);
+        src.start(startAt);
+        this.queueTime = startAt + ab.duration;
+        this._activeNodes.add(src);
+        src.onended = ()=>{
+          this._activeNodes.delete(src);
+          if(this._activeNodes.size === 0 && this._onEnded){
+            this._onEnded();
+          }
+        };
+      }
+      stop(){
+        for(const n of this._activeNodes){
+          try{ n.stop(0); }catch(e){}
+        }
+        this._activeNodes.clear();
+        if(this.ctx) this.queueTime = this.ctx.currentTime;
+      }
+      isBusy(){ return this._activeNodes.size > 0; }
+      onAllEnded(cb){ this._onEnded = cb; }
+    }
+
+    // =========================================================
+    // ================== Doubao 实时语音 客户端 ================
+    // =========================================================
+    class DoubaoRealtimeClient{
+      constructor(){
+        this.ws = null;
+        this.connectId = uuid();
+        this.sessionId = null;
+        this.sessionIdBytes = null;
+        this.sessionStarted = false;
+        this.connStarted = false;
+        this.player = new PcmPlayer(DOUBAO_CFG.TTS_SAMPLE_RATE);
+        this.mic = null;
+        this.recording = false;
+
+        this._currentBotMsgId = null;
+        this._currentBotText = '';
+        this._currentUserMsgId = null;
+
+        this._closing = false;
+      }
+
+      buildAuthUrl(){
+        // 将官方 Header 鉴权字段以 query 参数形式传入（snake_case）
+        const params = new URLSearchParams({
+          api_app_id: DOUBAO_CFG.APP_ID,
+          api_access_key: DOUBAO_CFG.ACCESS_TOKEN,
+          api_resource_id: DOUBAO_CFG.RESOURCE_ID,
+          api_app_key: DOUBAO_CFG.APP_KEY,
+          api_connect_id: this.connectId
+        });
+        return `${DOUBAO_CFG.WS_URL}?${params.toString()}`;
+      }
+
+      async connect(){
+        if(this.ws && this.ws.readyState === WebSocket.OPEN) return;
+        setVoiceState('connecting','建立连接…');
+        appendMsg('sys','正在连接火山引擎豆包实时语音服务…');
+
+        await this.player.resume();
+
+        return new Promise((resolve, reject)=>{
+          let opened = false;
+          const url = this.buildAuthUrl();
+          const ws = new WebSocket(url);
+          ws.binaryType = 'arraybuffer';
+          this.ws = ws;
+
+          ws.addEventListener('open', ()=>{
+            opened = true;
+            // 发送 StartConnection
+            this._send(EVT.StartConnection, jsonPayload({}), { hasSession:false });
+          });
+
+          ws.addEventListener('message', async (ev)=>{
+            try{
+              const data = ev.data instanceof ArrayBuffer ? ev.data : await ev.data.arrayBuffer();
+              this._onFrame(data, resolve, reject);
+            }catch(err){
+              console.error('parse frame error', err);
+            }
+          });
+
+          ws.addEventListener('error', (e)=>{
+            console.error('WebSocket error', e);
+            if(!opened){
+              setVoiceState('error','连接失败');
+              appendMsg('sys','❌ 连接失败：可能因浏览器无法直连服务端、CORS 或鉴权问题。请确认 AppID/Token 是否在白名单内。');
+              reject(new Error('WebSocket connect failed'));
+            } else {
+              setVoiceState('error','连接异常');
+              appendMsg('sys','⚠️ 连接异常。');
+            }
+          });
+
+          ws.addEventListener('close', (e)=>{
+            this.connStarted = false;
+            this.sessionStarted = false;
+            if(!this._closing){
+              setVoiceState('idle','已断开');
+              appendMsg('sys',`🔌 连接已关闭（code=${e.code}${e.reason?(' reason='+e.reason):''}）`);
+            }
+          });
+
+          // 在连接完成（即收到 SessionStarted）时 resolve，这里给 60s 超时
+          this._connectResolve = resolve;
+          this._connectReject = reject;
+          setTimeout(()=>{
+            if(!this.sessionStarted){
+              try{ ws.close(); }catch(e){}
+              reject(new Error('Connect timeout'));
+            }
+          }, 60000);
+        });
+      }
+
+      _onFrame(buf, resolve, reject){
+        const f = parseFrame(buf);
+        if(!f){ return; }
+        const { event, payloadObj, payloadBytes, msgType } = f;
+        // 错误帧
+        if(msgType === 0b1111){
+          const txt = payloadObj && payloadObj.error ? payloadObj.error : new TextDecoder().decode(payloadBytes||new Uint8Array());
+          console.error('[Doubao] error frame:', f.errorCode, txt);
+          appendMsg('sys', `❌ 服务端错误 code=${f.errorCode}: ${txt}`);
+          setVoiceState('error');
+          return;
+        }
+        switch(event){
+          case EVT.ConnectionStarted:
+            this.connStarted = true;
+            // 立即发起 StartSession
+            this.sessionId = uuid();
+            this.sessionIdBytes = new TextEncoder().encode(this.sessionId);
+            this._sendStartSession();
+            break;
+          case EVT.ConnectionFailed:
+            appendMsg('sys', `❌ 建立连接失败：${payloadObj?.error || ''}`);
+            setVoiceState('error');
+            this._connectReject && this._connectReject(new Error('ConnectionFailed'));
+            break;
+          case EVT.SessionStarted:
+            this.sessionStarted = true;
+            setVoiceState('ready','已就绪');
+            appendMsg('sys','✅ 会话已建立，可以开始对话啦～');
+            this._connectResolve && this._connectResolve();
+            break;
+          case EVT.SessionFailed:
+            appendMsg('sys', `❌ 会话失败：${payloadObj?.error || ''}`);
+            setVoiceState('error');
+            this._connectReject && this._connectReject(new Error('SessionFailed'));
+            break;
+          case EVT.SessionFinished:
+            this.sessionStarted = false;
+            break;
+          case EVT.ASRInfo:
+            // 用户开始说话
+            this.player.stop(); // 打断 AI 当前回复
+            break;
+          case EVT.ASRResponse: {
+            const results = payloadObj && payloadObj.results;
+            if(results && results.length){
+              const txt = results.map(r=>r.text||'').join('');
+              const isInterim = !!results[0].is_interim;
+              this._showUserText(txt, isInterim);
+            }
+            break;
+          }
+          case EVT.ASREnded:
+            // 把当前 interim 标记为最终
+            this._finalizeUserText();
+            break;
+          case EVT.ChatResponse: {
+            const txt = payloadObj && payloadObj.content;
+            if(txt){
+              this._appendBotText(payloadObj.reply_id || 'r0', txt);
+            }
+            break;
+          }
+          case EVT.ChatEnded:
+            // 模型文本回复结束 -> 用累积文本驱动情绪
+            this._commitBotEmotion();
+            break;
+          case EVT.TTSSentenceStart:
+            setVoiceState('speaking','AI 回复中');
+            break;
+          case EVT.TTSResponse:
+            if(payloadBytes && payloadBytes.length){
+              this.player.enqueuePcm16(payloadBytes);
+            }
+            break;
+          case EVT.TTSEnded:
+            this.player.onAllEnded(()=>{
+              if(this.recording) setVoiceState('recording','正在收音');
+              else setVoiceState('ready');
+            });
+            break;
+          case EVT.DialogCommonError:
+            appendMsg('sys', `⚠️ 对话错误：${payloadObj?.message || ''} (status=${payloadObj?.status_code||''})`);
+            break;
+          default:
+            // 其它事件忽略
+            break;
+        }
+      }
+
+      _showUserText(text, isInterim){
+        if(!this._currentUserMsgId){
+          this._currentUserMsgId = 'u-' + Date.now();
+          appendMsg('user', text, { id: this._currentUserMsgId, interim: isInterim });
+        } else {
+          const body = findOrCreateMsg('user', this._currentUserMsgId);
+          body.textContent = text;
+          if(isInterim) body.classList.add('interim');
+          else body.classList.remove('interim');
+        }
+        transcriptEl.scrollTop = transcriptEl.scrollHeight;
+      }
+      _finalizeUserText(){
+        if(this._currentUserMsgId){
+          const body = findOrCreateMsg('user', this._currentUserMsgId);
+          body.classList.remove('interim');
+          // 用最终的用户文本驱动一次情绪（次要：主要由 bot 回复驱动）
+          const userText = body.textContent;
+          if(userText && userText.trim().length>0){
+            // 也可以选择只用 bot 文本驱动；这里折中保留一份用户情绪信号
+          }
+        }
+        this._currentUserMsgId = null;
+      }
+      _appendBotText(replyId, chunk){
+        if(this._currentBotMsgId !== replyId){
+          this._currentBotMsgId = replyId;
+          this._currentBotText = '';
+          appendMsg('bot', '', { id: replyId });
+        }
+        this._currentBotText += chunk;
+        const body = findOrCreateMsg('bot', replyId);
+        body.textContent = this._currentBotText;
+        transcriptEl.scrollTop = transcriptEl.scrollHeight;
+      }
+      _commitBotEmotion(){
+        const txt = this._currentBotText || '';
+        if(txt.trim().length>0){
+          try{
+            const { bestId } = pickEmotion(txt);
+            setEmotion(bestId);
+          }catch(e){}
+        }
+        this._currentBotMsgId = null;
+        this._currentBotText = '';
+      }
+
+      _sendStartSession(){
+        const cfg = {
+          tts: {
+            audio_config: {
+              channel: 1,
+              format: DOUBAO_CFG.TTS_FORMAT,        // pcm_s16le
+              sample_rate: DOUBAO_CFG.TTS_SAMPLE_RATE
+            },
+            extra: {}
+          },
+          dialog: {
+            bot_name: '豆包',
+            extra: {
+              input_mod: 'audio',
+              model: '1.2.1.1'   // O2.0 版本
+            }
+          }
+        };
+        this._send(EVT.StartSession, jsonPayload(cfg), { hasSession:true });
+      }
+
+      _send(event, payloadBytes, opt={}){
+        if(!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+        const isAudio = event === EVT.TaskRequest;
+        const frame = buildFrame({
+          msgType: isAudio ? 0b0010 : 0b0001, // audio-only request or full-client request
+          flags: 0b0100,                       // event field present
+          event,
+          sessionId: opt.hasSession ? this.sessionIdBytes : null,
+          serialization: isAudio ? 0b0000 : 0b0001, // raw or json
+          payloadBytes
+        });
+        this.ws.send(frame);
+      }
+
+      sendAudio(uint8){
+        this._send(EVT.TaskRequest, uint8, { hasSession:true });
+      }
+
+      async startRecording(){
+        if(this.recording) return;
+        if(!this.sessionStarted) await this.connect();
+        this.mic = new MicCapturer((pcm)=>{
+          this.sendAudio(pcm);
+        });
+        try{
+          await this.mic.start();
+          this.recording = true;
+          setVoiceState('recording','正在收音');
+        }catch(err){
+          appendMsg('sys', `❌ 麦克风启动失败：${err && err.message || err}`);
+          setVoiceState('error');
+          throw err;
+        }
+      }
+      stopRecording(){
+        if(this.mic){
+          this.mic.stop();
+          this.mic = null;
+        }
+        this.recording = false;
+        if(this.sessionStarted) setVoiceState('ready');
+        else setVoiceState('idle');
+      }
+
+      async close(){
+        this._closing = true;
+        try{ this.stopRecording(); }catch(e){}
+        try{ this.player.stop(); }catch(e){}
+        try{
+          if(this.ws && this.ws.readyState===WebSocket.OPEN && this.sessionStarted){
+            this._send(EVT.FinishSession, jsonPayload({}), { hasSession:true });
+            this._send(EVT.FinishConnection, jsonPayload({}), { hasSession:false });
+          }
+        }catch(e){}
+        try{ this.ws && this.ws.close(); }catch(e){}
+        this.ws = null;
+        this.sessionStarted = false;
+        this.connStarted = false;
+      }
+    }
+
+    // ============ UI 绑定 ============
+    let doubaoClient = null;
+    let toggling = false;
+    micBtn.addEventListener('click', async ()=>{
+      if(toggling) return;
+      toggling = true;
+      try{
+        if(!doubaoClient){
+          doubaoClient = new DoubaoRealtimeClient();
+        }
+        if(doubaoClient.recording){
+          // 停止收音（保持连接，便于下一次复用）
+          doubaoClient.stopRecording();
+          micBtn.classList.remove('recording');
+          micBtnLabel.textContent = '开始说话';
+          micBtn.setAttribute('aria-pressed','false');
+        } else {
+          micBtnLabel.textContent = '连接中…';
+          micBtn.disabled = true;
+          try{
+            await doubaoClient.startRecording();
+            micBtn.classList.add('recording');
+            micBtnLabel.textContent = '停止';
+            micBtn.setAttribute('aria-pressed','true');
+          } finally {
+            micBtn.disabled = false;
+          }
+        }
+      }catch(err){
+        console.error(err);
+        micBtn.classList.remove('recording');
+        micBtnLabel.textContent = '开始说话';
+        micBtn.setAttribute('aria-pressed','false');
+      } finally {
+        toggling = false;
+      }
+    });
+
+    // 页面卸载时优雅断开
+    window.addEventListener('beforeunload', ()=>{
+      try{ doubaoClient && doubaoClient.close(); }catch(e){}
+    });
 
   })();
   </script>
