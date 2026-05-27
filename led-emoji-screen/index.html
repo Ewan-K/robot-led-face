@@ -2161,6 +2161,11 @@
         this._currentUserMsgId = null;
 
         this._closing = false;
+        this._stopPromise = null;
+        this._closePromise = null;
+        this._sessionFinishWaiters = [];
+        this._finishSessionRequested = false;
+        this._finishConnectionRequested = false;
       }
 
       buildAuthUrl(){
@@ -2244,7 +2249,11 @@
         // 错误帧
         if(msgType === 0b1111){
           const txt = payloadObj && payloadObj.error ? payloadObj.error : new TextDecoder().decode(payloadBytes||new Uint8Array());
+          const isIdleTimeoutNoise = f.errorCode === 55000001 || txt.includes('DialogAudioIdleTimeoutError');
           console.error('[Doubao] error frame:', f.errorCode, txt);
+          if(isIdleTimeoutNoise){
+            return;
+          }
           appendMsg('sys', `❌ 服务端错误 code=${f.errorCode}: ${txt}`);
           setVoiceState('error');
           return;
@@ -2252,15 +2261,21 @@
         switch(event){
           case EVT.ConnectionStarted:
             this.connStarted = true;
+            this._finishConnectionRequested = false;
             // 立即发起 StartSession
             this.sessionId = uuid();
             this.sessionIdBytes = new TextEncoder().encode(this.sessionId);
             this._sendStartSession();
             break;
           case EVT.ConnectionFailed:
+            this._finishConnectionRequested = false;
             appendMsg('sys', `❌ 建立连接失败：${payloadObj?.error || ''}`);
             setVoiceState('error');
             this._connectReject && this._connectReject(new Error('ConnectionFailed'));
+            break;
+          case EVT.ConnectionFinished:
+            this.connStarted = false;
+            this._finishConnectionRequested = false;
             break;
           case EVT.SessionStarted:
             this.sessionStarted = true;
@@ -2275,6 +2290,11 @@
             break;
           case EVT.SessionFinished:
             this.sessionStarted = false;
+            this._finishSessionRequested = false;
+            // 唤醒所有等待 SessionFinished 的流程
+            const waiters = this._sessionFinishWaiters;
+            this._sessionFinishWaiters = [];
+            waiters.forEach(fn => { try{ fn(); }catch(e){} });
             break;
           case EVT.ASRInfo:
             // 用户开始说话
@@ -2318,9 +2338,15 @@
               else setVoiceState('ready');
             });
             break;
-          case EVT.DialogCommonError:
-            appendMsg('sys', `⚠️ 对话错误：${payloadObj?.message || ''} (status=${payloadObj?.status_code||''})`);
+          case EVT.DialogCommonError: {
+            const code = payloadObj?.code || payloadObj?.status_code;
+            const message = payloadObj?.message || '';
+            const isIdleTimeoutNoise = code === 55000001 || message.includes('DialogAudioIdleTimeoutError');
+            if(!isIdleTimeoutNoise){
+              appendMsg('sys', `⚠️ 对话错误：${message} (status=${payloadObj?.status_code||''})`);
+            }
             break;
+          }
           default:
             // 其它事件忽略
             break;
@@ -2429,30 +2455,65 @@
           throw err;
         }
       }
-      stopRecording(){
-        if(this.mic){
-          this.mic.stop();
-          this.mic = null;
-        }
-        this.recording = false;
-        if(this.sessionStarted) setVoiceState('ready');
-        else setVoiceState('idle');
+      async _finishSessionAndConnection({ closeSocket=false } = {}){
+        if(this._stopPromise) return this._stopPromise;
+        this._stopPromise = (async ()=>{
+          try{
+            try{ this.player.stop(); }catch(e){}
+
+            const wsOpen = this.ws && this.ws.readyState === WebSocket.OPEN;
+            if(wsOpen && this.sessionStarted && !this._finishSessionRequested){
+              this._finishSessionRequested = true;
+              this._send(EVT.FinishSession, jsonPayload({}), { hasSession:true });
+              await new Promise((resolve)=>{
+                const done = ()=> resolve();
+                this._sessionFinishWaiters.push(done);
+                setTimeout(done, 5000);
+              });
+            }
+
+            if(this.mic){
+              this.mic.stop();
+              this.mic = null;
+            }
+            this.recording = false;
+
+            if(wsOpen && this.connStarted && !this._finishConnectionRequested){
+              this._finishConnectionRequested = true;
+              this._send(EVT.FinishConnection, jsonPayload({}), { hasSession:false });
+            }
+
+            if(closeSocket){
+              try{ this.ws && this.ws.close(); }catch(e){}
+              this.ws = null;
+              this.sessionStarted = false;
+              this.connStarted = false;
+              setVoiceState('idle','已断开');
+            } else {
+              setVoiceState('idle');
+            }
+          } finally {
+            this._stopPromise = null;
+          }
+        })();
+        return this._stopPromise;
+      }
+
+      async stopRecording(){
+        return this._finishSessionAndConnection({ closeSocket:true });
       }
 
       async close(){
+        if(this._closePromise) return this._closePromise;
         this._closing = true;
-        try{ this.stopRecording(); }catch(e){}
-        try{ this.player.stop(); }catch(e){}
-        try{
-          if(this.ws && this.ws.readyState===WebSocket.OPEN && this.sessionStarted){
-            this._send(EVT.FinishSession, jsonPayload({}), { hasSession:true });
-            this._send(EVT.FinishConnection, jsonPayload({}), { hasSession:false });
+        this._closePromise = (async ()=>{
+          try{
+            await this._finishSessionAndConnection({ closeSocket:true });
+          } finally {
+            this._closePromise = null;
           }
-        }catch(e){}
-        try{ this.ws && this.ws.close(); }catch(e){}
-        this.ws = null;
-        this.sessionStarted = false;
-        this.connStarted = false;
+        })();
+        return this._closePromise;
       }
     }
 
@@ -2467,8 +2528,14 @@
           doubaoClient = new DoubaoRealtimeClient();
         }
         if(doubaoClient.recording){
-          // 停止收音（保持连接，便于下一次复用）
-          doubaoClient.stopRecording();
+          // 停止说话并按协议顺序完成会话关闭
+          micBtnLabel.textContent = '停止中…';
+          micBtn.disabled = true;
+          try{
+            await doubaoClient.stopRecording();
+          } finally {
+            micBtn.disabled = false;
+          }
           micBtn.classList.remove('recording');
           micBtnLabel.textContent = '开始说话';
           micBtn.setAttribute('aria-pressed','false');
