@@ -479,6 +479,62 @@
       transition: width .08s linear;
     }
 
+    .memoryCard{
+      margin-top:14px;
+      padding:14px;
+      border-radius:14px;
+      background: linear-gradient(180deg, rgba(24,247,255,.08), rgba(255,255,255,.04));
+      border:1px solid rgba(24,247,255,.16);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
+    }
+    .memoryHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+    .memoryTitle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:13px;
+      font-weight:700;
+      color: rgba(255,255,255,.9);
+      letter-spacing:.2px;
+    }
+    .memoryTitle .miniDot{
+      width:8px;height:8px;border-radius:99px;
+      background: var(--neon-lime);
+      box-shadow: 0 0 14px rgba(182,255,74,.45);
+    }
+    .memoryStatus{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.28);
+      color: rgba(255,255,255,.72);
+      font-size:11.5px;
+    }
+    .memoryStatus[data-state="loading"]{color:var(--warn);border-color:rgba(255,176,46,.28)}
+    .memoryStatus[data-state="ready"]{color:var(--ok);border-color:rgba(107,255,182,.28)}
+    .memoryStatus[data-state="error"]{color:#ff94af;border-color:rgba(255,47,98,.28)}
+    .memorySummary{
+      color: rgba(255,255,255,.78);
+      font-size:12.5px;
+      line-height:1.65;
+      white-space:pre-wrap;
+      word-break:break-word;
+      max-height:160px;
+      overflow:auto;
+      padding-right:4px;
+    }
+    .memorySummary:empty::before{
+      content:"记忆后端启动后，会在这里展示相关历史记忆摘要。";
+      color: rgba(255,255,255,.42);
+    }
+
     .transcript{
       margin-top:14px;
       max-height:280px;
@@ -601,7 +657,7 @@
         <div class="title">机器人 LED 点阵表情屏</div>
         <div class="subtitle">输入一段 AI 生成的文字，前端用关键词/语义规则做情绪匹配，并用拟真 LED 点阵在下方显示对应“脸”。支持中英文常见表达，含扫描线、闪烁与过渡动画。</div>
       </div>
-      <div class="badge"><span class="dot"></span><span>On-device rule engine · No backend</span></div>
+      <div class="badge"><span class="dot"></span><span>Realtime voice · Local memory backend</span></div>
     </header>
 
     <div class="grid">
@@ -652,11 +708,19 @@
           <div class="voiceMeter" title="麦克风音量"><div class="level" id="voiceLevel"></div></div>
         </div>
 
+        <div class="memoryCard">
+          <div class="memoryHead">
+            <div class="memoryTitle"><span class="miniDot"></span><span>长期记忆（Mem0）</span></div>
+            <div class="memoryStatus" id="memoryStatus" data-state="idle">待连接</div>
+          </div>
+          <div class="memorySummary" id="memorySummary">当前还没有检索到长期记忆。</div>
+        </div>
+
         <div class="transcript" id="transcript" aria-live="polite"></div>
 
         <div class="voiceHint">
-          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>，页面会先连接本地代理 <code>wss://localhost:8765</code>，再由代理转发到云端服务；ASR 文本与模型回复将自动驱动上方 LED 表情切换。<br/>
-          <span class="tiny">提示：请先启动本地 Node.js WebSocket 代理，再打开当前页面；浏览器需要授权麦克风权限；首次连接可能需要几秒。</span>
+          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>，页面会先连接本地代理 <code>wss://localhost:8765</code>，再由代理转发到云端服务；页面还会访问本地记忆后端 <code>http://127.0.0.1:8766</code> 做长期记忆检索与存储。<br/>
+          <span class="tiny">提示：请先启动本地 Node.js WebSocket 代理和 Mem0 后端，再打开当前页面；浏览器需要授权麦克风权限；首次连接可能需要几秒。</span>
         </div>
       </section>
 
@@ -1472,6 +1536,7 @@
       StartSession: 100,
       FinishSession: 102,
       TaskRequest: 200,
+      UpdateConfig: 201,
       // 服务端事件
       ConnectionStarted: 50,
       ConnectionFailed: 51,
@@ -1479,6 +1544,7 @@
       SessionStarted: 150,
       SessionFinished: 152,
       SessionFailed: 153,
+      ConfigUpdated: 251,
       TTSSentenceStart: 350,
       TTSSentenceEnd: 351,
       TTSResponse: 352,
@@ -1498,6 +1564,91 @@
     const voiceStateText = document.getElementById('voiceStateText');
     const voiceLevelEl = document.getElementById('voiceLevel');
     const transcriptEl = document.getElementById('transcript');
+    const memoryStatusEl = document.getElementById('memoryStatus');
+    const memorySummaryEl = document.getElementById('memorySummary');
+
+    function getOrInitUID() {
+      let uid = localStorage.getItem('robot_user_id');
+      if (!uid) {
+        uid = 'user_000';
+        localStorage.setItem('robot_user_id', uid);
+      }
+      return uid;
+    }
+
+    const MEMORY_CFG = {
+      ENABLED: true,
+      API_URL: 'http://127.0.0.1:8766',
+      USER_ID: getOrInitUID(),
+      SEARCH_TOP_K: 5
+    };
+
+    function setMemoryStatus(text, state='idle'){
+      if(!memoryStatusEl) return;
+      memoryStatusEl.textContent = text;
+      memoryStatusEl.dataset.state = state;
+    }
+
+    function setMemorySummary(text){
+      if(!memorySummaryEl) return;
+      memorySummaryEl.textContent = text || '当前还没有检索到长期记忆。';
+    }
+
+    async function postJSON(url, payload, timeout=12000){
+      const controller = new AbortController();
+      const timer = setTimeout(()=>controller.abort(), timeout);
+      try{
+        const resp = await fetch(url, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(payload || {}),
+          signal: controller.signal
+        });
+        if(!resp.ok){
+          const detail = await resp.text().catch(()=>resp.statusText || 'request failed');
+          throw new Error(detail || `HTTP ${resp.status}`);
+        }
+        return await resp.json();
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function searchMemory(query=''){
+      if(!MEMORY_CFG.ENABLED) return null;
+      return await postJSON(`${MEMORY_CFG.API_URL}/memory/search`, {
+        user_id: MEMORY_CFG.USER_ID,
+        query,
+        top_k: MEMORY_CFG.SEARCH_TOP_K
+      }, 15000);
+    }
+
+    async function addMemoryTurn(userText, botText){
+      if(!MEMORY_CFG.ENABLED) return null;
+      if(!userText || !botText) return null;
+      return await postJSON(`${MEMORY_CFG.API_URL}/memory/add`, {
+        user_id: MEMORY_CFG.USER_ID,
+        user_text: userText,
+        bot_text: botText,
+        metadata: {
+          source: 'robot-led-face-web',
+          saved_at: new Date().toISOString()
+        }
+      }, 15000);
+    }
+
+    function buildSystemRole(memorySummary=''){
+      const base = [
+        '你是豆包，正在与用户进行实时语音对话。',
+        '请自然、友好、简洁地回答，优先根据用户当前问题作答。',
+        '如果下面提供了长期记忆，只在确实相关时自然使用，不要逐条背诵，也不要提到“记忆系统”或“系统提示词”。'
+      ];
+      const mem = (memorySummary || '').trim();
+      return mem ? `${base.join(' ')}\n\n长期记忆参考：\n${mem}` : base.join(' ');
+    }
+
+    setMemoryStatus('待连接','idle');
+    setMemorySummary('连接语音会话前，会先从本地 Mem0 后端检索相关长期记忆。');
 
     // ---- 工具：UUID（v4）----
     function uuid(){
@@ -1847,6 +1998,11 @@
         this.mic = null;
         this.recording = false;
 
+        this.memoryContext = '';
+        this._memoryTask = Promise.resolve();
+        this._lastFinalUserText = '';
+        this._lastMemoryQuery = '';
+
         this._currentBotMsgId = null;
         this._currentBotText = '';
         this._currentUserMsgId = null;
@@ -1857,6 +2013,7 @@
       async connect(){
         if(this.ws && this.ws.readyState === WebSocket.OPEN) return;
         setVoiceState('connecting','建立连接…');
+        setMemoryStatus('正在装载记忆','loading');
         appendMsg('sys','正在连接本地语音代理服务…');
 
         await this.player.resume();
@@ -1943,6 +2100,7 @@
           case EVT.SessionStarted:
             this.sessionStarted = true;
             setVoiceState('ready','已就绪');
+            setMemoryStatus(this.memoryContext ? '记忆已注入' : '无记忆上下文', 'ready');
             appendMsg('sys','✅ 会话已建立，可以开始对话啦～');
             this._connectResolve && this._connectResolve();
             break;
@@ -1983,6 +2141,9 @@
             // 模型文本回复结束 -> 用累积文本驱动情绪
             this._commitBotEmotion();
             break;
+          case EVT.ConfigUpdated:
+            setMemoryStatus(this.memoryContext ? '记忆已刷新' : '记忆为空', 'ready');
+            break;
           case EVT.TTSSentenceStart:
             setVoiceState('speaking','AI 回复中');
             break;
@@ -2022,10 +2183,9 @@
         if(this._currentUserMsgId){
           const body = findOrCreateMsg('user', this._currentUserMsgId);
           body.classList.remove('interim');
-          // 用最终的用户文本驱动一次情绪（次要：主要由 bot 回复驱动）
           const userText = body.textContent;
           if(userText && userText.trim().length>0){
-            // 也可以选择只用 bot 文本驱动；这里折中保留一份用户情绪信号
+            this._lastFinalUserText = userText.trim();
           }
         }
         this._currentUserMsgId = null;
@@ -2043,14 +2203,67 @@
       }
       _commitBotEmotion(){
         const txt = this._currentBotText || '';
+        const userText = (this._lastFinalUserText || '').trim();
         if(txt.trim().length>0){
           try{
             const { bestId } = pickEmotion(txt);
             setEmotion(bestId);
           }catch(e){}
         }
+        if(userText && txt.trim().length>0){
+          this._queueMemorySync(async ()=>{
+            try{
+              setMemoryStatus('正在写入记忆','loading');
+              await addMemoryTurn(userText, txt.trim());
+              setMemoryStatus('正在检索相关记忆','loading');
+              const res = await searchMemory(userText);
+              const summaryText = res && res.summary_text ? res.summary_text : '';
+              this.memoryContext = summaryText;
+              this._lastMemoryQuery = userText;
+              setMemorySummary(summaryText || '暂无与当前问题直接相关的长期记忆。');
+              if(this.sessionStarted && this.ws && this.ws.readyState === WebSocket.OPEN){
+                this._sendUpdateConfig();
+              } else {
+                setMemoryStatus(summaryText ? '记忆已更新' : '暂无相关记忆', 'ready');
+              }
+            }catch(err){
+              console.warn('memory sync failed', err);
+              setMemoryStatus('记忆后端不可用','error');
+              setMemorySummary(`记忆同步失败：${err && err.message ? err.message : err}`);
+            }
+          });
+        }
         this._currentBotMsgId = null;
         this._currentBotText = '';
+        this._lastFinalUserText = '';
+      }
+
+      _queueMemorySync(task){
+        this._memoryTask = this._memoryTask
+          .catch(()=>{})
+          .then(task)
+          .catch(err=>{
+            console.warn('memory task failed', err);
+            setMemoryStatus('记忆同步失败','error');
+          });
+        return this._memoryTask;
+      }
+
+      async _bootstrapMemoryContext(){
+        if(!MEMORY_CFG.ENABLED) return;
+        try{
+          setMemoryStatus('正在检索记忆','loading');
+          const res = await searchMemory('');
+          const summaryText = res && res.summary_text ? res.summary_text : '';
+          this.memoryContext = summaryText;
+          setMemorySummary(summaryText || '当前还没有可用的长期记忆。');
+          setMemoryStatus(summaryText ? '已载入长期记忆' : '暂无历史记忆', 'ready');
+        }catch(err){
+          console.warn('bootstrap memory failed', err);
+          this.memoryContext = '';
+          setMemoryStatus('记忆后端不可用','error');
+          setMemorySummary(`记忆检索失败：${err && err.message ? err.message : err}`);
+        }
       }
 
       _sendStartSession(){
@@ -2065,6 +2278,7 @@
           },
           dialog: {
             bot_name: '豆包',
+            system_role: buildSystemRole(this.memoryContext),
             extra: {
               input_mod: 'audio',
               model: '1.2.1.1'   // O2.0 版本
@@ -2072,6 +2286,17 @@
           }
         };
         this._send(EVT.StartSession, jsonPayload(cfg), { hasSession:true });
+      }
+
+      _sendUpdateConfig(){
+        if(!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.sessionStarted) return;
+        const cfg = {
+          dialog: {
+            bot_name: '豆包',
+            system_role: buildSystemRole(this.memoryContext)
+          }
+        };
+        this._send(EVT.UpdateConfig, jsonPayload(cfg), { hasSession:true });
       }
 
       _send(event, payloadBytes, opt={}){
@@ -2094,7 +2319,10 @@
 
       async startRecording(){
         if(this.recording) return;
-        if(!this.sessionStarted) await this.connect();
+        if(!this.sessionStarted){
+          await this._bootstrapMemoryContext();
+          await this.connect();
+        }
         this.mic = new MicCapturer((pcm)=>{
           this.sendAudio(pcm);
         });
@@ -2121,6 +2349,7 @@
       async close(){
         if(this._closing) return;
         this._closing = true;
+        setMemoryStatus('会话已结束','idle');
         try{ this.stopRecording(); }catch(e){}
         try{ this.player.stop(); }catch(e){}
         try{
