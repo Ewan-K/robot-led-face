@@ -1620,7 +1620,7 @@
         user_id: MEMORY_CFG.USER_ID,
         query,
         top_k: MEMORY_CFG.SEARCH_TOP_K
-      }, 15000);
+      }, 60000);
     }
 
     async function addMemoryTurn(userText, botText){
@@ -1634,7 +1634,7 @@
           source: 'robot-led-face-web',
           saved_at: new Date().toISOString()
         }
-      }, 15000);
+      }, 60000);
     }
 
     function buildSystemRole(memorySummary=''){
