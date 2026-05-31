@@ -1078,10 +1078,15 @@
           break;
 
         case 'fear':
-          addEyesRound(m, 1);
+          drawThick(m, (mm)=>{
+            drawCircle(mm, FACE.leftEyeX, FACE.eyeY, 3, 2);
+            drawCircle(mm, FACE.rightEyeX, FACE.eyeY, 3, 2);
+          }, 0);
           addMouthOpen(m);
-          drawArc(m, FACE.leftEyeX, 6.2, 2.1, Math.PI*1.08, Math.PI*1.92, 2);
-          drawArc(m, FACE.rightEyeX, 6.2, 2.1, Math.PI*1.08, Math.PI*1.92, 2);
+          drawThick(m, (mm)=>{
+            drawArc(mm, FACE.leftEyeX, 6.2, 2.1, Math.PI*1.08, Math.PI*1.92, 2);
+            drawArc(mm, FACE.rightEyeX, 6.2, 2.1, Math.PI*1.08, Math.PI*1.92, 2);
+          }, 0);
           break;
 
         case 'disgust':
@@ -1098,7 +1103,7 @@
         case 'focus':
           addEyesFocus(m, t);
           drawThick(m, (mm)=>{
-            drawLine(mm, 9, 17, 15, 17, 2);
+            drawArc(mm, 12, 15.5, 3, Math.PI*0.2, Math.PI*0.8, 2);
           }, 0);
           break;
 
