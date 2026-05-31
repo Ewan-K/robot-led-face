@@ -568,11 +568,34 @@
         ctx.fill();
         ctx.restore();
       }
+      function drawRotatedDrop(scene, cx, cy, scale, angleDeg, color){
+        const [px, py] = point(scene, cx, cy);
+        const s = scene.unit * scale;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(angleDeg * Math.PI / 180);
+        ctx.fillStyle = color || PALETTE.accent;
+        ctx.shadowBlur = scene.lineWidth * 1.05;
+        ctx.shadowColor = color || PALETTE.accent;
+        ctx.beginPath();
+        ctx.moveTo(0, -s * 1.1);
+        ctx.quadraticCurveTo(s * 0.85, -s * 0.22, s * 0.52, s * 0.55);
+        ctx.quadraticCurveTo(0, s * 1.25, -s * 0.52, s * 0.55);
+        ctx.quadraticCurveTo(-s * 0.85, -s * 0.22, 0, -s * 1.1);
+        ctx.fill();
+        ctx.restore();
+      }
+      function fillCircleShape(scene, cx, cy, radius, color){
+        const [px, py] = point(scene, cx, cy);
+        ctx.save();
+        ctx.fillStyle = color || PALETTE.bg;
+        ctx.beginPath();
+        ctx.arc(px, py, radius * scene.unit, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
       function topArc(scene, cx, cy, radius, widthScale, color){
         drawArcShape(scene, cx, cy, radius, Math.PI * 0.15, Math.PI * 0.85, widthScale, color);
-      }
-      function bottomArc(scene, cx, cy, radius, widthScale, color){
-        drawArcShape(scene, cx, cy, radius, Math.PI * 1.15, Math.PI * 1.85, widthScale, color);
       }
       function drawSchemeTwo(emotionId){
         const scene = getScene();
@@ -597,33 +620,33 @@
             drawCircleShape(scene, 16.0, 12.2, 1.85, 0.92);
             break;
           case 'sad':
-            bottomArc(scene, 8.0, 6.8, 1.65, 0.8);
-            bottomArc(scene, 16.0, 6.8, 1.65, 0.8);
-            bottomArc(scene, 8.0, 11.4, 2.0, 0.86);
-            bottomArc(scene, 16.0, 11.4, 2.0, 0.86);
-            drawDropShape(scene, 18.6, 14.3, 0.7, PALETTE.accent);
+            drawQuadraticShape(scene, 5.8, 6.3, 7.3, 7.0, 9.1, 7.5, 0.8);
+            drawQuadraticShape(scene, 14.9, 7.5, 16.7, 7.0, 18.2, 6.3, 0.8);
+            drawArcShape(scene, 8.0, 11.4, 1.95, 0, Math.PI, 0.86);
+            drawArcShape(scene, 16.0, 11.4, 1.95, 0, Math.PI, 0.86);
+            drawDropShape(scene, 4.9, 14.5, 0.72, '#66FFFF');
             break;
           case 'anxious':
-            drawLineShape(scene, 6.2, 7.0, 9.8, 7.0, 0.82);
-            drawLineShape(scene, 14.2, 7.0, 17.8, 7.0, 0.82);
-            drawCircleShape(scene, 8.0, 12.1, 1.92, 0.9);
-            drawCircleShape(scene, 16.0, 12.1, 1.92, 0.9);
+            drawQuadraticShape(scene, 5.9, 7.5, 7.6, 7.0, 9.5, 6.7, 0.82);
+            drawQuadraticShape(scene, 14.5, 6.7, 16.4, 7.0, 18.1, 7.5, 0.82);
+            drawCircleShape(scene, 8.0, 12.15, 1.94, 0.9);
+            drawCircleShape(scene, 16.0, 12.15, 1.94, 0.9);
             break;
           case 'sceptical':
-            topArc(scene, 8.0, 6.2, 1.55, 0.8);
-            drawLineShape(scene, 14.4, 7.4, 17.6, 7.4, 0.8);
+            topArc(scene, 8.0, 6.35, 1.55, 0.82);
+            drawLineShape(scene, 14.3, 7.9, 17.9, 7.2, 0.8);
             drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9);
             drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
-            topArc(scene, 8.0, 10.2, 0.7, 0.55);
+            topArc(scene, 7.55, 10.05, 0.62, 0.52);
             break;
           case 'bright':
-            topArc(scene, 8.0, 6.7, 1.8, 0.82);
-            topArc(scene, 16.0, 6.7, 1.8, 0.82);
-            topArc(scene, 8.0, 12.1, 2.15, 0.9);
-            topArc(scene, 16.0, 12.1, 2.15, 0.9);
-            drawLineShape(scene, 9.1, 3.4, 8.8, 1.5, 0.55, PALETTE.accent);
-            drawLineShape(scene, 12.0, 3.0, 12.0, 1.0, 0.55, PALETTE.accent);
-            drawLineShape(scene, 14.9, 3.4, 15.2, 1.5, 0.55, PALETTE.accent);
+            topArc(scene, 8.0, 7.0, 1.82, 0.84);
+            topArc(scene, 16.0, 7.0, 1.82, 0.84);
+            topArc(scene, 8.0, 12.15, 2.08, 0.9);
+            topArc(scene, 16.0, 12.15, 2.08, 0.9);
+            drawLineShape(scene, 9.3, 3.7, 8.5, 1.9, 0.58, '#73EAF9');
+            drawLineShape(scene, 12.0, 3.35, 12.0, 1.15, 0.58, '#73EAF9');
+            drawLineShape(scene, 14.7, 3.7, 15.5, 1.9, 0.58, '#73EAF9');
             break;
           case 'listening':
             drawLineShape(scene, 6.4, 7.2, 9.6, 7.2, 0.8);
@@ -632,30 +655,32 @@
             drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
             break;
           case 'sweating':
-            topArc(scene, 8.0, 6.9, 1.65, 0.8);
-            topArc(scene, 16.0, 6.9, 1.65, 0.8);
-            topArc(scene, 8.0, 12.0, 2.15, 0.88);
-            topArc(scene, 16.0, 12.0, 2.15, 0.88);
-            drawDropShape(scene, 18.2, 13.9, 0.68, PALETTE.accent);
-            drawDropShape(scene, 20.1, 15.0, 0.58, PALETTE.accent);
+            topArc(scene, 8.0, 6.95, 1.7, 0.8);
+            topArc(scene, 16.0, 6.95, 1.7, 0.8);
+            topArc(scene, 8.0, 12.0, 2.05, 0.88);
+            topArc(scene, 16.0, 12.0, 2.05, 0.88);
+            drawRotatedDrop(scene, 19.2, 10.8, 0.62, 165, '#66E6FF');
+            drawRotatedDrop(scene, 18.4, 14.15, 0.7, 128, '#66E6FF');
             break;
           case 'brooding':
-            drawLineShape(scene, 5.8, 7.0, 10.2, 7.0, 1.02);
-            drawLineShape(scene, 13.8, 7.0, 18.2, 7.0, 1.02);
+            drawQuadraticShape(scene, 5.8, 6.7, 7.9, 6.0, 10.1, 6.45, 0.9);
+            drawQuadraticShape(scene, 13.9, 6.45, 16.0, 6.8, 18.2, 6.2, 0.9);
             drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9);
             drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
+            fillCircleShape(scene, 8.55, 11.45, 0.55, PALETTE.bg);
+            fillCircleShape(scene, 16.55, 11.45, 0.55, PALETTE.bg);
             break;
           case 'pleased':
-            drawLineShape(scene, 6.1, 6.4, 9.6, 7.4, 0.8);
-            drawLineShape(scene, 14.4, 7.4, 17.9, 6.4, 0.8);
-            topArc(scene, 8.0, 11.7, 2.0, 0.88);
-            topArc(scene, 16.0, 11.7, 2.0, 0.88);
+            drawQuadraticShape(scene, 5.9, 6.95, 7.9, 6.25, 10.0, 6.9, 0.8);
+            drawQuadraticShape(scene, 14.0, 6.9, 16.1, 6.25, 18.1, 6.95, 0.8);
+            drawQuadraticShape(scene, 5.8, 12.45, 8.0, 9.75, 10.05, 12.1, 0.92);
+            drawQuadraticShape(scene, 13.95, 12.1, 16.0, 9.75, 18.2, 12.45, 0.92);
             break;
           case 'sorry':
-            bottomArc(scene, 8.0, 7.1, 1.4, 0.75);
-            bottomArc(scene, 16.0, 7.1, 1.4, 0.75);
-            drawCircleShape(scene, 8.0, 12.2, 1.55, 0.82);
-            drawCircleShape(scene, 16.0, 12.2, 1.55, 0.82);
+            drawQuadraticShape(scene, 6.0, 6.55, 7.3, 7.35, 8.9, 7.7, 0.78);
+            drawQuadraticShape(scene, 15.1, 7.7, 16.7, 7.35, 18.0, 6.55, 0.78);
+            drawCircleShape(scene, 8.0, 12.2, 1.58, 0.82);
+            drawCircleShape(scene, 16.0, 12.2, 1.58, 0.82);
             break;
           default:
             drawLineShape(scene, 6.4, 7.2, 9.6, 7.2, 0.8);
