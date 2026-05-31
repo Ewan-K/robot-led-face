@@ -585,10 +585,10 @@
             drawBezierShape(scene, 13.95, 12.05, 14.1, 9.55, 17.5, 9.4, 17.25, 12.35, 0.82);
             break;
           case 'joyful':
-            topArc(scene, 8.0, 7.0, 1.65, 0.82);
-            topArc(scene, 16.0, 7.0, 1.65, 0.82);
-            topArc(scene, 8.0, 12.0, 2.25, 0.9);
-            topArc(scene, 16.0, 12.0, 2.25, 0.9);
+            drawQuadraticShape(scene, 5.8, 7.4, 7.2, 5.9, 8.9, 6.35, 0.82);
+            drawQuadraticShape(scene, 15.1, 6.35, 16.8, 5.9, 18.2, 7.4, 0.82);
+            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.9);
+            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.9);
             break;
           case 'angry':
             drawLineShape(scene, 6.0, 7.1, 9.5, 5.5, 0.88);
