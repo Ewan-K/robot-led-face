@@ -516,6 +516,31 @@
         ctx.stroke();
         ctx.restore();
       }
+      function drawQuadraticShape(scene, x0, y0, cpx, cpy, x1, y1, widthScale, color){
+        const [sx, sy] = point(scene, x0, y0);
+        const [cp1x, cp1y] = point(scene, cpx, cpy);
+        const [ex, ey] = point(scene, x1, y1);
+        ctx.save();
+        strokePath(color || PALETTE.line, scene.lineWidth * (widthScale || 1));
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo(cp1x, cp1y, ex, ey);
+        ctx.stroke();
+        ctx.restore();
+      }
+      function drawBezierShape(scene, x0, y0, cp1x, cp1y, cp2x, cp2y, x1, y1, widthScale, color){
+        const [sx, sy] = point(scene, x0, y0);
+        const [bx1, by1] = point(scene, cp1x, cp1y);
+        const [bx2, by2] = point(scene, cp2x, cp2y);
+        const [ex, ey] = point(scene, x1, y1);
+        ctx.save();
+        strokePath(color || PALETTE.line, scene.lineWidth * (widthScale || 1));
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.bezierCurveTo(bx1, by1, bx2, by2, ex, ey);
+        ctx.stroke();
+        ctx.restore();
+      }
       function drawArcShape(scene, cx, cy, radius, start, end, widthScale, color){
         const [px, py] = point(scene, cx, cy);
         ctx.save();
@@ -554,10 +579,10 @@
         clearSchemeTwo(scene);
         switch(emotionId){
           case 'flirting':
-            drawLineShape(scene, 5.0, 7.3, 7.9, 7.2, 0.84);
-            drawLineShape(scene, 5.2, 9.5, 8.2, 9.9, 0.84);
-            topArc(scene, 16.2, 7.1, 1.55, 0.84);
-            topArc(scene, 16.0, 11.0, 2.15, 0.9);
+            drawQuadraticShape(scene, 4.9, 7.0, 6.4, 7.55, 8.2, 7.2, 0.82);
+            drawQuadraticShape(scene, 5.0, 9.25, 6.7, 9.7, 8.35, 10.15, 0.82);
+            drawQuadraticShape(scene, 14.35, 6.95, 16.0, 6.15, 17.7, 7.0, 0.82);
+            drawBezierShape(scene, 13.95, 12.05, 14.1, 9.55, 17.5, 9.4, 17.25, 12.35, 0.82);
             break;
           case 'joyful':
             topArc(scene, 8.0, 7.0, 1.65, 0.82);
