@@ -991,9 +991,7 @@
     }
 
     function addMouthOpen(m){
-      drawThick(m, (mm)=>{
-        drawCircle(mm, 12, 18.5, 2.8, 2);
-      }, 0);
+      drawCircle(m, 12, 18.5, 2.8, 2);
     }
 
     function addNoseWrinkle(m){
@@ -1078,15 +1076,10 @@
           break;
 
         case 'fear':
-          drawThick(m, (mm)=>{
-            drawCircle(mm, FACE.leftEyeX, FACE.eyeY, 3, 2);
-            drawCircle(mm, FACE.rightEyeX, FACE.eyeY, 3, 2);
-          }, 0);
+          addEyesRound(m, 1);
           addMouthOpen(m);
-          drawThick(m, (mm)=>{
-            drawArc(mm, FACE.leftEyeX, 6.2, 2.1, Math.PI*1.08, Math.PI*1.92, 2);
-            drawArc(mm, FACE.rightEyeX, 6.2, 2.1, Math.PI*1.08, Math.PI*1.92, 2);
-          }, 0);
+          drawArc(m, FACE.leftEyeX, 6.2, 2.1, Math.PI*1.08, Math.PI*1.92, 2);
+          drawArc(m, FACE.rightEyeX, 6.2, 2.1, Math.PI*1.08, Math.PI*1.92, 2);
           break;
 
         case 'disgust':
