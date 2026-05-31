@@ -1080,10 +1080,8 @@
         case 'fear':
           addEyesRound(m, 1);
           addMouthOpen(m);
-          drawThick(m, (mm)=>{
-            drawArc(mm, FACE.leftEyeX, 6.2, 2.1, Math.PI*1.18, Math.PI*1.82, 2);
-            drawArc(mm, FACE.rightEyeX, 6.2, 2.1, Math.PI*1.18, Math.PI*1.82, 2);
-          }, 0);
+          drawArc(m, FACE.leftEyeX, 6.2, 2.1, Math.PI*1.08, Math.PI*1.92, 2);
+          drawArc(m, FACE.rightEyeX, 6.2, 2.1, Math.PI*1.08, Math.PI*1.92, 2);
           break;
 
         case 'disgust':
