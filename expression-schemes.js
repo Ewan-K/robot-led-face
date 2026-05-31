@@ -543,15 +543,6 @@
           drawArc(mm, FACE.rightEyeX, FACE.eyeY + drop + rightTilt, radius, start, end, 2);
         }, (cfg.thickness === null || cfg.thickness === undefined) ? 0.85 : cfg.thickness);
       }
-      function lineEye(m, side, y, slope, length){
-        const cx = side === 'left' ? FACE.leftEyeX : FACE.rightEyeX;
-        const eyeY = (y === null || y === undefined) ? FACE.eyeY : y;
-        const half = ((length === null || length === undefined) ? 2.1 : length) / 2;
-        const tilt = slope || 0;
-        drawThick(m, (mm)=>{
-          drawLine(mm, cx - half, eyeY - tilt, cx + half, eyeY + tilt, 2);
-        }, 0.75);
-      }
       function ringEye(m, cx, cy, opts){
         const cfg = opts || {};
         const radius = cfg.radius || 1.9;
@@ -604,10 +595,14 @@
         browLine(m, 5.4, 4.5, 10.0, 5.9, 0.85);
         browLine(m, 14.0, 5.9, 18.6, 4.5, 0.85);
       }
-      function flirtingBrowArc(m){
+      function flirtingLeftEye(m){
+        browLine(m, FACE.leftEyeX - 2.2, FACE.eyeY - 2.1, FACE.leftEyeX + 1.0, FACE.eyeY - 2.0, 0.75);
+        browLine(m, FACE.leftEyeX - 2.0, FACE.eyeY + 0.2, FACE.leftEyeX + 1.2, FACE.eyeY + 0.7, 0.75);
+      }
+      function flirtingRightEye(m){
         drawThick(m, (mm)=>{
-          drawArc(mm, FACE.leftEyeX + 0.2, FACE.eyeY - 6.2, 2.4, Math.PI * 1.10, Math.PI * 1.84, 2);
-        }, 0.7);
+          drawArc(mm, FACE.rightEyeX, FACE.eyeY + 0.55, 2.35, Math.PI * 1.14, Math.PI * 1.86, 2);
+        }, 0.82);
       }
       function tearAccent(side){
         const accent = makeMatrix(0);
@@ -642,11 +637,8 @@
 
         switch(emotionId){
           case 'flirting':
-            lineEye(base, 'left', FACE.eyeY - 0.35, -0.06, 3.7);
-            flirtingBrowArc(base);
-            drawThick(base, (mm)=>{
-              drawArc(mm, FACE.rightEyeX, FACE.eyeY + 0.25, 2.15, Math.PI * 0.16, Math.PI * 0.84, 2);
-            }, 0.82);
+            flirtingLeftEye(base);
+            flirtingRightEye(base);
             break;
           case 'joyful':
             arcEyesUp(base, { radius: 2.3, lift: sway, thickness: 0.85 });
