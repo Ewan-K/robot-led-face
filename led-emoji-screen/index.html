@@ -749,7 +749,8 @@
 
   <script>
   (function(){
-    const SIZE = 24; // LED grid
+    const SIZE = 48; // LED grid
+    const SCALE = SIZE / 24;
     const canvas = document.getElementById('screen');
     const ctx = canvas.getContext('2d');
     const screenWrap = document.getElementById('screenWrap');
@@ -774,21 +775,25 @@
 
     function clamp(v,min,max){return Math.max(min, Math.min(max,v));}
 
-    function setPx(m,x,y,v=2){
+    function _setPx(m,x,y,v=2){
       x=Math.round(x);y=Math.round(y);
       if(x<0||x>=SIZE||y<0||y>=SIZE) return;
       m[y][x] = Math.max(m[y][x], v);
     }
 
+    function setPx(m,x,y,v=2){
+      _setPx(m, x*SCALE, y*SCALE, v);
+    }
+
     function drawLine(m,x0,y0,x1,y1,v=2){
-      x0=Math.round(x0);y0=Math.round(y0);x1=Math.round(x1);y1=Math.round(y1);
+      x0*=SCALE; y0*=SCALE; x1*=SCALE; y1*=SCALE;
       const dx=Math.abs(x1-x0), dy=Math.abs(y1-y0);
       const sx = x0<x1?1:-1;
       const sy = y0<y1?1:-1;
       let err = dx - dy;
       while(true){
-        setPx(m,x0,y0,v);
-        if(x0===x1 && y0===y1) break;
+        _setPx(m,x0,y0,v);
+        if(Math.round(x0)===Math.round(x1) && Math.round(y0)===Math.round(y1)) break;
         const e2 = 2*err;
         if(e2>-dy){err-=dy; x0+=sx;}
         if(e2<dx){err+=dx; y0+=sy;}
@@ -796,31 +801,33 @@
     }
 
     function drawCircle(m,cx,cy,r,v=2){
-      const steps = Math.max(24, Math.floor(r*18));
+      cx*=SCALE; cy*=SCALE; r*=SCALE;
+      const steps = Math.max(SIZE, Math.floor(r*18));
       for(let i=0;i<=steps;i++){
         const a = (i/steps)*Math.PI*2;
         const x = cx + Math.cos(a)*r;
         const y = cy + Math.sin(a)*r;
-        setPx(m,x,y,v);
+        _setPx(m,x,y,v);
       }
     }
 
     function drawArc(m,cx,cy,r,a0,a1,v=2){
-      const steps = Math.max(16, Math.floor(r*16));
+      cx*=SCALE; cy*=SCALE; r*=SCALE;
+      const steps = Math.max(SIZE, Math.floor(r*16));
       const dir = a1>=a0 ? 1 : -1;
       const span = Math.abs(a1-a0);
       for(let i=0;i<=steps;i++){
         const a = a0 + dir*(i/steps)*span;
         const x = cx + Math.cos(a)*r;
         const y = cy + Math.sin(a)*r;
-        setPx(m,x,y,v);
+        _setPx(m,x,y,v);
       }
     }
 
     function drawThick(m, drawFn, thickness=2){
       // poor-man thickness: draw small offsets
       const offsets=[];
-      const t = Math.max(1, thickness);
+      const t = Math.max(1, Math.round(thickness * SCALE));
       for(let oy=-t; oy<=t; oy++){
         for(let ox=-t; ox<=t; ox++){
           if(ox*ox+oy*oy<=t*t) offsets.push([ox,oy]);
@@ -833,7 +840,7 @@
           const vv = base[y][x];
           if(vv<=0) continue;
           for(const [ox,oy] of offsets){
-            setPx(m, x+ox, y+oy, vv);
+            _setPx(m, x+ox, y+oy, vv);
           }
         }
       }
@@ -1388,7 +1395,7 @@
       const dim = Math.min(W, H);
       const pad = Math.floor(dim*0.08);
       const cell = (dim - pad*2)/SIZE;
-      const r = cell*0.33;
+      const r = cell*0.42;
       const offX = (W - dim) / 2;
       const offY = (H - dim) / 2;
 
