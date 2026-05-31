@@ -591,8 +591,8 @@
             drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.9);
             break;
           case 'angry':
-            drawLineShape(scene, 6.0, 7.1, 9.5, 5.5, 0.88);
-            drawLineShape(scene, 14.0, 5.5, 17.5, 7.1, 0.88);
+            drawLineShape(scene, 6.0, 5.5, 9.5, 7.1, 0.88);
+            drawLineShape(scene, 14.0, 7.1, 17.5, 5.5, 0.88);
             drawCircleShape(scene, 8.0, 12.2, 1.85, 0.92);
             drawCircleShape(scene, 16.0, 12.2, 1.85, 0.92);
             break;
