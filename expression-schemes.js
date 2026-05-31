@@ -580,7 +580,7 @@
         switch(emotionId){
           case 'flirting':
             drawQuadraticShape(scene, 4.9, 7.0, 6.4, 7.55, 8.2, 7.2, 0.82);
-            drawQuadraticShape(scene, 5.0, 9.25, 6.7, 9.7, 8.35, 10.15, 0.82);
+            drawQuadraticShape(scene, 5.0, 9.85, 6.7, 10.3, 8.35, 10.75, 0.82);
             drawQuadraticShape(scene, 14.35, 6.95, 16.0, 6.15, 17.7, 7.0, 0.82);
             drawBezierShape(scene, 13.95, 12.05, 14.1, 9.55, 17.5, 9.4, 17.25, 12.35, 0.82);
             break;
