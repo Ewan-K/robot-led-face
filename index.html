@@ -904,9 +904,9 @@
     const FACE = {
       leftEyeX: 8,
       rightEyeX: 16,
-      eyeY: 11,
-      browOuterY: 5,
-      browInnerY: 6
+      eyeY: 10,
+      browOuterY: 4,
+      browInnerY: 5
     };
 
     function faceBase(){
@@ -980,7 +980,7 @@
 
     function addMouthFrown(m){
       drawThick(m, (mm)=>{
-        drawArc(mm, 12, 18.0, 5.2, Math.PI*1.20, Math.PI*1.80, 2);
+        drawArc(mm, 12, 20.0, 5.2, Math.PI*1.20, Math.PI*1.80, 2);
       }, 0);
     }
 
