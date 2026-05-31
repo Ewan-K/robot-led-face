@@ -42,16 +42,7 @@
 
     /* subtle noise */
     body:before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      opacity:.08;
-      background-image:
-        repeating-radial-gradient(circle at 20% 20%, rgba(255,255,255,.04) 0 1px, transparent 1px 6px),
-        repeating-radial-gradient(circle at 70% 60%, rgba(255,255,255,.03) 0 1px, transparent 1px 7px);
-      mix-blend-mode:overlay;
-      filter: blur(.2px);
+      display: none;
     }
 
     .wrap{
@@ -140,16 +131,7 @@
     }
 
     .inputPanel:before{
-      content:"";
-      position:absolute;
-      inset:-2px;
-      background:
-        radial-gradient(700px 320px at 15% 30%, rgba(24,247,255,.16), transparent 55%),
-        radial-gradient(600px 320px at 90% 20%, rgba(255,59,245,.14), transparent 55%);
-      opacity:.9;
-      filter: blur(2px);
-      pointer-events:none;
-      mask: linear-gradient(180deg, rgba(0,0,0,.75), transparent 80%);
+      display: none;
     }
 
     .inputPanel > *{position:relative}
@@ -328,16 +310,7 @@
       overflow:hidden;
     }
     .voicePanel:before{
-      content:"";
-      position:absolute;
-      inset:-2px;
-      background:
-        radial-gradient(700px 320px at 80% 20%, rgba(24,247,255,.18), transparent 55%),
-        radial-gradient(600px 320px at 10% 80%, rgba(255,59,245,.14), transparent 55%);
-      opacity:.9;
-      filter: blur(2px);
-      pointer-events:none;
-      mask: linear-gradient(180deg, rgba(0,0,0,.75), transparent 80%);
+      display: none;
     }
     .voicePanel > *{position:relative}
 
@@ -1419,9 +1392,9 @@
       const r = cell*0.45;
       const offX = (W - dim) / 2;
       const offY = (H - dim) / 2;
-
-      // global flicker
-      const flicker = 0.92 + 0.06*Math.sin(t*0.008) + 0.03*Math.sin(t*0.027);
+      
+      // Removed global flicker and per-pixel shimmer as requested
+      const flicker = 1.0;
 
       // off dots
       for(let y=0;y<SIZE;y++){
@@ -1443,9 +1416,7 @@
           const cx = offX + pad + (x+0.5)*cell;
           const cy = offY + pad + (y+0.5)*cell;
 
-          // per-pixel shimmer
-          const shimmer = 0.9 + 0.2*Math.sin((x*13+y*7) + t*0.012);
-          const intensity = clamp((v/2) * flicker * shimmer, 0, 1);
+          const intensity = clamp((v/2) * flicker, 0, 1);
 
           const glowA = 0.10 + 0.55*intensity;
           const coreA = 0.20 + 0.75*intensity;
