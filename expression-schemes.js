@@ -512,180 +512,217 @@
         { id:'sorry', emoji:'🥺', label:'抱歉', color:'#f7fbff' }
       ];
       const EMOTION_BY_ID = Object.fromEntries(EMOTIONS.map((item)=>[item.id, item]));
-      const FACE = { leftEyeX: 8, rightEyeX: 16, eyeY: 11, browY: 5.5 };
+      const FACE = { leftEyeX: 8, rightEyeX: 16, eyeY: 12.1, browY: 6.0 };
       const TEAR_COLOR = '#7be8ff';
+      const SWEAT_COLOR = '#7be8ff';
       const RAY_COLOR = '#90ffe1';
 
       function faceBase(){ return makeMatrix(0); }
-      function arcEyesUp(m, opts){
+      function lineStroke(m, x0, y0, x1, y1, thickness){
+        drawThick(m, (mm)=>{ drawLine(mm, x0, y0, x1, y1, 2); }, (thickness === null || thickness === undefined) ? 0.72 : thickness);
+      }
+      function arcStroke(m, cx, cy, radius, start, end, thickness){
+        drawThick(m, (mm)=>{ drawArc(mm, cx, cy, radius, start, end, 2); }, (thickness === null || thickness === undefined) ? 0.8 : thickness);
+      }
+      function eyeArcUp(m, cx, cy, radius, tilt){
+        const eyeY = (cy === null || cy === undefined) ? FACE.eyeY : cy;
+        const r = radius || 2.1;
+        arcStroke(m, cx, eyeY + (tilt || 0), r, Math.PI * 0.14, Math.PI * 0.86, 0.82);
+      }
+      function eyeArcDown(m, cx, cy, radius, tilt){
+        const eyeY = (cy === null || cy === undefined) ? FACE.eyeY : cy;
+        const r = radius || 2.05;
+        arcStroke(m, cx, eyeY + (tilt || 0), r, Math.PI * 1.14, Math.PI * 1.86, 0.82);
+      }
+      function ringEye(m, cx, cy, radius, thickness){
+        arcStroke(m, cx, cy, radius || 1.95, 0, Math.PI * 2, (thickness === null || thickness === undefined) ? 0.82 : thickness);
+      }
+      function eyeRings(m, opts){
         const cfg = opts || {};
-        const radius = cfg.radius || 2.2;
-        const lift = cfg.lift || 0;
-        const leftTilt = cfg.leftTilt || 0;
-        const rightTilt = cfg.rightTilt || 0;
-        const start = (cfg.start === null || cfg.start === undefined) ? Math.PI * 0.16 : cfg.start;
-        const end = (cfg.end === null || cfg.end === undefined) ? Math.PI * 0.84 : cfg.end;
-        drawThick(m, (mm)=>{
-          drawArc(mm, FACE.leftEyeX, FACE.eyeY + lift + leftTilt, radius, start, end, 2);
-          drawArc(mm, FACE.rightEyeX, FACE.eyeY + lift + rightTilt, radius, start, end, 2);
-        }, (cfg.thickness === null || cfg.thickness === undefined) ? 0.85 : cfg.thickness);
+        ringEye(m, FACE.leftEyeX, FACE.eyeY + (cfg.leftOffset || 0), cfg.radius, cfg.thickness);
+        ringEye(m, FACE.rightEyeX, FACE.eyeY + (cfg.rightOffset || 0), cfg.radius, cfg.thickness);
       }
-      function arcEyesDown(m, opts){
-        const cfg = opts || {};
-        const radius = cfg.radius || 2.2;
-        const drop = cfg.drop || 0;
-        const leftTilt = cfg.leftTilt || 0;
-        const rightTilt = cfg.rightTilt || 0;
-        const start = (cfg.start === null || cfg.start === undefined) ? Math.PI * 1.16 : cfg.start;
-        const end = (cfg.end === null || cfg.end === undefined) ? Math.PI * 1.84 : cfg.end;
-        drawThick(m, (mm)=>{
-          drawArc(mm, FACE.leftEyeX, FACE.eyeY + drop + leftTilt, radius, start, end, 2);
-          drawArc(mm, FACE.rightEyeX, FACE.eyeY + drop + rightTilt, radius, start, end, 2);
-        }, (cfg.thickness === null || cfg.thickness === undefined) ? 0.85 : cfg.thickness);
+      function browLineSingle(m, cx, y, width, tilt, thickness){
+        const half = (width || 3.8) / 2;
+        const slant = tilt || 0;
+        lineStroke(m, cx - half, y - slant, cx + half, y + slant, thickness);
       }
-      function ringEye(m, cx, cy, opts){
-        const cfg = opts || {};
-        const radius = cfg.radius || 1.9;
-        const pupilDx = cfg.pupilDx || 0;
-        const pupilDy = cfg.pupilDy || 0;
-        drawThick(m, (mm)=>{ drawCircle(mm, cx, cy, radius, 2); }, (cfg.thickness === null || cfg.thickness === undefined) ? 0.85 : cfg.thickness);
-        fillCircle(m, cx + pupilDx, cy + pupilDy, cfg.pupilRadius || 0.55, 2);
+      function browArcUpSingle(m, cx, y, radius, thickness){
+        arcStroke(m, cx, y, radius || 1.8, Math.PI * 1.14, Math.PI * 1.86, (thickness === null || thickness === undefined) ? 0.76 : thickness);
       }
-      function ringEyes(m, opts){
-        const cfg = opts || {};
-        ringEye(m, FACE.leftEyeX, FACE.eyeY + (cfg.leftLift || 0), {
-          radius: cfg.radius,
-          pupilDx: cfg.leftPupilDx,
-          pupilDy: cfg.leftPupilDy,
-          pupilRadius: cfg.pupilRadius,
-          thickness: cfg.thickness
-        });
-        ringEye(m, FACE.rightEyeX, FACE.eyeY + (cfg.rightLift || 0), {
-          radius: cfg.radius,
-          pupilDx: cfg.rightPupilDx,
-          pupilDy: cfg.rightPupilDy,
-          pupilRadius: cfg.pupilRadius,
-          thickness: cfg.thickness
-        });
+      function browArcDownSingle(m, cx, y, radius, thickness){
+        arcStroke(m, cx, y, radius || 1.8, Math.PI * 0.14, Math.PI * 0.86, (thickness === null || thickness === undefined) ? 0.76 : thickness);
       }
-      function browLine(m, x0, y0, x1, y1, thickness){
-        drawThick(m, (mm)=>{ drawLine(mm, x0, y0, x1, y1, 2); }, (thickness === null || thickness === undefined) ? 0.75 : thickness);
+      function doubleShortBrowsLeft(m){
+        browLineSingle(m, FACE.leftEyeX - 0.5, FACE.browY - 0.55, 2.9, -0.04, 0.68);
+        browLineSingle(m, FACE.leftEyeX - 0.35, FACE.browY + 0.95, 3.1, 0.12, 0.68);
       }
-      function straightBrows(m, opts){
-        const cfg = opts || {};
-        const y = (cfg.y === null || cfg.y === undefined) ? FACE.browY : cfg.y;
-        const width = cfg.width || 4;
-        const leftY = y + (cfg.leftOffset || 0);
-        const rightY = y + (cfg.rightOffset || 0);
-        browLine(m, FACE.leftEyeX - width / 2, leftY, FACE.leftEyeX + width / 2, leftY, cfg.thickness);
-        browLine(m, FACE.rightEyeX - width / 2, rightY, FACE.rightEyeX + width / 2, rightY, cfg.thickness);
+      function joyfulBrows(m){
+        browArcUpSingle(m, FACE.leftEyeX, FACE.browY, 1.75, 0.74);
+        browArcUpSingle(m, FACE.rightEyeX, FACE.browY, 1.75, 0.74);
       }
-      function anxiousBrows(m){ straightBrows(m, { y: 5.1, width: 4.2, thickness: 0.9 }); }
-      function listeningBrows(m){ straightBrows(m, { y: 5.6, width: 3.2, thickness: 0.8 }); }
-      function broodingBrows(m){ straightBrows(m, { y: 5.2, width: 4.8, thickness: 1.15 }); }
       function angryBrows(m){
-        browLine(m, 5.1, 6.1, 9.8, 4.2, 0.95);
-        browLine(m, 14.2, 4.2, 18.9, 6.1, 0.95);
+        browLineSingle(m, FACE.leftEyeX, FACE.browY - 0.05, 3.9, -0.48, 0.82);
+        browLineSingle(m, FACE.rightEyeX, FACE.browY - 0.05, 3.9, 0.48, 0.82);
+      }
+      function sadBrows(m){
+        browArcDownSingle(m, FACE.leftEyeX, FACE.browY - 0.15, 1.7, 0.74);
+        browArcDownSingle(m, FACE.rightEyeX, FACE.browY - 0.15, 1.7, 0.74);
+      }
+      function anxiousBrows(m){
+        browLineSingle(m, FACE.leftEyeX, FACE.browY, 3.9, 0, 0.78);
+        browLineSingle(m, FACE.rightEyeX, FACE.browY, 3.9, 0, 0.78);
       }
       function scepticalBrows(m){
-        browLine(m, 5.4, 4.6, 10.0, 5.1, 0.85);
-        browLine(m, 14.0, 5.9, 18.7, 5.0, 0.85);
+        browArcUpSingle(m, FACE.leftEyeX, FACE.browY - 0.2, 1.65, 0.74);
+        browLineSingle(m, FACE.rightEyeX, FACE.browY + 0.35, 3.6, 0, 0.76);
+      }
+      function brightBrows(m){
+        joyfulBrows(m);
+      }
+      function listeningBrows(m){
+        browLineSingle(m, FACE.leftEyeX, FACE.browY + 0.25, 3.5, 0, 0.76);
+        browLineSingle(m, FACE.rightEyeX, FACE.browY + 0.25, 3.5, 0, 0.76);
+      }
+      function sweatingBrows(m){
+        browArcUpSingle(m, FACE.leftEyeX, FACE.browY - 0.05, 1.75, 0.74);
+        browArcUpSingle(m, FACE.rightEyeX, FACE.browY - 0.05, 1.75, 0.74);
+      }
+      function broodingBrows(m){
+        browLineSingle(m, FACE.leftEyeX, FACE.browY, 4.4, 0, 1.02);
+        browLineSingle(m, FACE.rightEyeX, FACE.browY, 4.4, 0, 1.02);
+      }
+      function pleasedBrows(m){
+        browArcUpSingle(m, FACE.leftEyeX, FACE.browY + 0.05, 1.6, 0.74);
+        browArcUpSingle(m, FACE.rightEyeX, FACE.browY + 0.05, 1.6, 0.74);
       }
       function sorryBrows(m){
-        browLine(m, 5.4, 4.5, 10.0, 5.9, 0.85);
-        browLine(m, 14.0, 5.9, 18.6, 4.5, 0.85);
+        browArcDownSingle(m, FACE.leftEyeX, FACE.browY + 0.35, 1.45, 0.7);
+        browArcDownSingle(m, FACE.rightEyeX, FACE.browY + 0.35, 1.45, 0.7);
       }
-      function flirtingLeftEye(m){
-        browLine(m, FACE.leftEyeX - 2.2, FACE.eyeY - 2.1, FACE.leftEyeX + 1.0, FACE.eyeY - 2.0, 0.75);
-        browLine(m, FACE.leftEyeX - 2.0, FACE.eyeY + 0.2, FACE.leftEyeX + 1.2, FACE.eyeY + 0.7, 0.75);
+      function flirtingBrows(m){
+        doubleShortBrowsLeft(m);
+        browArcUpSingle(m, FACE.rightEyeX, FACE.browY - 0.15, 1.55, 0.72);
       }
-      function flirtingRightEye(m){
-        drawThick(m, (mm)=>{
-          drawArc(mm, FACE.rightEyeX, FACE.eyeY + 0.55, 2.35, Math.PI * 1.14, Math.PI * 1.86, 2);
-        }, 0.82);
+      function flirtingEyes(m){
+        eyeArcUp(m, FACE.leftEyeX, FACE.eyeY + 0.15, 2.15, 0.08);
+        eyeArcUp(m, FACE.rightEyeX, FACE.eyeY + 0.1, 1.95, 0.02);
+      }
+      function joyfulEyes(m, sway){
+        eyeArcUp(m, FACE.leftEyeX, FACE.eyeY + sway, 2.1, 0);
+        eyeArcUp(m, FACE.rightEyeX, FACE.eyeY + sway, 2.1, 0);
+      }
+      function sadEyes(m){
+        eyeArcDown(m, FACE.leftEyeX, FACE.eyeY + 0.15, 2.0, 0);
+        eyeArcDown(m, FACE.rightEyeX, FACE.eyeY + 0.15, 2.0, 0);
+      }
+      function brightEyes(m){
+        eyeArcUp(m, FACE.leftEyeX, FACE.eyeY, 2.0, 0);
+        eyeArcUp(m, FACE.rightEyeX, FACE.eyeY, 2.0, 0);
+      }
+      function sweatingEyes(m, sway){
+        eyeArcUp(m, FACE.leftEyeX, FACE.eyeY + sway * 0.7, 2.0, 0);
+        eyeArcUp(m, FACE.rightEyeX, FACE.eyeY + sway * 0.7, 2.0, 0);
+      }
+      function pleasedEyes(m){
+        eyeArcUp(m, FACE.leftEyeX, FACE.eyeY + 0.05, 1.95, -0.22);
+        eyeArcUp(m, FACE.rightEyeX, FACE.eyeY + 0.05, 1.95, 0.22);
+      }
+      function addScepticalLeftEyeBump(m){
+        lineStroke(m, FACE.leftEyeX - 0.6, FACE.eyeY - 2.3, FACE.leftEyeX + 0.35, FACE.eyeY - 2.65, 0.5);
       }
       function tearAccent(side){
         const accent = makeMatrix(0);
-        const x = side === 'left' ? 5.7 : 17.8;
-        const y = FACE.eyeY + 3.3;
-        fillCircle(accent, x, y - 0.35, 0.42, 2);
-        browLine(accent, x, y, x + 0.25, y + 1.25, 0.55);
-        browLine(accent, x + 0.25, y + 1.25, x + 0.9, y + 0.65, 0.55);
+        const x = side === 'left' ? 5.35 : 18.0;
+        const y = FACE.eyeY + 3.0;
+        fillCircle(accent, x, y - 0.25, 0.38, 2);
+        lineStroke(accent, x - 0.08, y, x + 0.3, y + 1.05, 0.46);
+        lineStroke(accent, x + 0.3, y + 1.05, x + 0.82, y + 0.45, 0.46);
         return accent;
       }
-      function sweatAccent(){
-        const accent = makeMatrix(0);
-        const x = 18.6;
-        const y = FACE.eyeY + 0.8;
-        fillCircle(accent, x + 0.35, y - 0.1, 0.45, 2);
-        browLine(accent, x, y + 0.1, x + 0.55, y + 1.45, 0.6);
-        browLine(accent, x + 0.55, y + 1.45, x + 1.1, y + 0.65, 0.6);
-        return accent;
+      function sweatAccents(){
+        return [
+          { matrix: tearAccent('right'), color: SWEAT_COLOR, intensity: 1 },
+          { matrix: (()=>{
+            const accent = makeMatrix(0);
+            const x = 20.0;
+            const y = FACE.eyeY + 1.65;
+            fillCircle(accent, x, y - 0.22, 0.34, 2);
+            lineStroke(accent, x - 0.04, y, x + 0.22, y + 0.88, 0.44);
+            lineStroke(accent, x + 0.22, y + 0.88, x + 0.72, y + 0.32, 0.44);
+            return accent;
+          })(), color: SWEAT_COLOR, intensity: 1 }
+        ];
       }
       function rayAccents(){
         const accent = makeMatrix(0);
-        browLine(accent, 8.8, 3.0, 8.0, 1.6, 0.55);
-        browLine(accent, 12.0, 2.7, 12.0, 0.9, 0.55);
-        browLine(accent, 15.2, 3.0, 16.0, 1.6, 0.55);
+        lineStroke(accent, 8.9, 2.9, 8.6, 1.2, 0.5);
+        lineStroke(accent, 12.0, 2.7, 12.0, 0.9, 0.5);
+        lineStroke(accent, 15.1, 2.9, 15.4, 1.2, 0.5);
         return accent;
       }
 
       function patternFor(emotionId, t){
         const base = faceBase();
         const accents = [];
-        const sway = Math.sin(t * 0.0024) * 0.18;
+        const sway = Math.sin(t * 0.0024) * 0.12;
 
         switch(emotionId){
           case 'flirting':
-            flirtingLeftEye(base);
-            flirtingRightEye(base);
+            flirtingBrows(base);
+            flirtingEyes(base);
             break;
           case 'joyful':
-            arcEyesUp(base, { radius: 2.3, lift: sway, thickness: 0.85 });
+            joyfulBrows(base);
+            joyfulEyes(base, sway);
             break;
           case 'angry':
-            ringEyes(base, { radius: 1.75, pupilRadius: 0.48 });
             angryBrows(base);
+            eyeRings(base, { radius: 1.9 });
             break;
           case 'sad':
-            arcEyesDown(base, { radius: 2.15, drop: -0.15, thickness: 0.82 });
-            sorryBrows(base);
-            accents.push({ matrix: tearAccent('right'), color: TEAR_COLOR, intensity: 1 });
+            sadBrows(base);
+            sadEyes(base);
+            accents.push({ matrix: tearAccent('left'), color: TEAR_COLOR, intensity: 1 });
             break;
           case 'anxious':
-            ringEyes(base, { radius: 1.85, pupilRadius: 0.46, leftPupilDy: 0.15, rightPupilDy: 0.15 });
             anxiousBrows(base);
+            eyeRings(base, { radius: 1.95 });
             break;
           case 'sceptical':
-            ringEyes(base, { radius: 1.85, leftPupilDx: -0.18, rightPupilDx: 0.18, pupilRadius: 0.46 });
             scepticalBrows(base);
+            eyeRings(base, { radius: 1.92 });
+            addScepticalLeftEyeBump(base);
             break;
           case 'bright':
-            arcEyesDown(base, { radius: 2.25, drop: -0.25, thickness: 0.82 });
+            brightBrows(base);
+            brightEyes(base);
             accents.push({ matrix: rayAccents(), color: RAY_COLOR, intensity: 1 });
             break;
           case 'listening':
-            ringEyes(base, { radius: 1.82, pupilRadius: 0.48, leftPupilDx: -0.1, rightPupilDx: -0.1 });
             listeningBrows(base);
+            eyeRings(base, { radius: 1.92 });
             break;
           case 'sweating':
-            arcEyesUp(base, { radius: 2.25, lift: sway * 0.6, thickness: 0.82 });
-            accents.push({ matrix: sweatAccent(), color: TEAR_COLOR, intensity: 1 });
+            sweatingBrows(base);
+            sweatingEyes(base, sway);
+            sweatAccents().forEach((accent)=>accents.push(accent));
             break;
           case 'brooding':
-            ringEyes(base, { radius: 1.8, leftPupilDx: -0.12, rightPupilDx: -0.12, pupilRadius: 0.48 });
             broodingBrows(base);
+            eyeRings(base, { radius: 1.92, thickness: 0.84 });
             break;
           case 'pleased':
-            arcEyesDown(base, { radius: 2.1, leftTilt: -0.18, rightTilt: 0.18, thickness: 0.82 });
+            pleasedBrows(base);
+            pleasedEyes(base);
             break;
           case 'sorry':
-            ringEyes(base, { radius: 1.5, pupilRadius: 0.42, leftPupilDy: 0.35, rightPupilDy: 0.35 });
             sorryBrows(base);
+            eyeRings(base, { radius: 1.6, thickness: 0.76 });
             break;
           default:
-            ringEyes(base, { radius: 1.82, pupilRadius: 0.48 });
             listeningBrows(base);
+            eyeRings(base, { radius: 1.92 });
         }
 
         return centerRenderSpec({ base, accents });
