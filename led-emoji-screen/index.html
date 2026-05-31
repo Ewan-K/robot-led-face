@@ -749,7 +749,7 @@
 
   <script>
   (function(){
-    const SIZE = 48; // LED grid
+    const SIZE = 96; // LED grid
     const SCALE = SIZE / 24;
     const canvas = document.getElementById('screen');
     const ctx = canvas.getContext('2d');
@@ -1403,7 +1403,7 @@
       const dim = Math.min(W, H);
       const pad = Math.floor(dim*0.08);
       const cell = (dim - pad*2)/SIZE;
-      const r = cell*0.42;
+      const r = cell*0.45;
       const offX = (W - dim) / 2;
       const offY = (H - dim) / 2;
 
