@@ -874,17 +874,6 @@
       }
     }
 
-    function blendMatrices(a,b,t){
-      const out = makeMatrix(0);
-      for(let y=0;y<SIZE;y++){
-        for(let x=0;x<SIZE;x++){
-          const v = a[y][x]*(1-t) + b[y][x]*t;
-          out[y][x] = v;
-        }
-      }
-      return out;
-    }
-
     function centerPatternVertically(m){
       let minY = SIZE;
       let maxY = -1;
@@ -913,7 +902,6 @@
       return out;
     }
 
-    function easeOutCubic(x){ return 1 - Math.pow(1-x,3); }
 
     // --------- Emotions definition (12) ---------
     const EMOTIONS = [
@@ -1422,16 +1410,10 @@
 
     // --------- Renderer ---------
     let currentEmotionId = 'focus';
-    let prevEmotionId = currentEmotionId;
-    let transitionStart = performance.now();
-    let transitioning = true;
 
     function setEmotion(id){
       if(!EMOTION_BY_ID[id]) id='focus';
-      prevEmotionId = currentEmotionId;
       currentEmotionId = id;
-      transitionStart = performance.now();
-      transitioning = true;
 
       const e = EMOTION_BY_ID[id];
       emotionLabelEl.innerHTML = `${e.emoji} 当前情绪：<span style="color:rgba(255,255,255,.86)">${e.label}</span> <span class="tiny">· ${e.group}</span>`;
@@ -1529,25 +1511,10 @@
     }
 
     function tick(t){
-      const now = t;
       const eNow = EMOTION_BY_ID[currentEmotionId];
-      const ePrev = EMOTION_BY_ID[prevEmotionId];
+      const mat = patternFor(currentEmotionId, t);
 
-      // transition blend
-      const dur = 520;
-      const dt = now - transitionStart;
-      let p = clamp(dt/dur, 0, 1);
-      p = easeOutCubic(p);
-
-      const matPrev = patternFor(prevEmotionId, transitionStart);
-      const matNow = patternFor(currentEmotionId, now);
-      const mat = transitioning ? blendMatrices(matPrev, matNow, p) : matNow;
-
-      if(transitioning && dt>=dur){
-        transitioning = false;
-      }
-
-      drawLED(mat, eNow.color, now);
+      drawLED(mat, eNow.color, t);
       requestAnimationFrame(tick);
     }
 
