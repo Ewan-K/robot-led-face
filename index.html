@@ -850,6 +850,34 @@
       return out;
     }
 
+    function centerPatternVertically(m){
+      let minY = SIZE;
+      let maxY = -1;
+      for(let y=0;y<SIZE;y++){
+        for(let x=0;x<SIZE;x++){
+          if(m[y][x]>0.02){
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+          }
+        }
+      }
+      if(maxY<0) return m;
+
+      const currentCenter = (minY + maxY) / 2;
+      const targetCenter = (SIZE - 1) / 2;
+      const shiftY = Math.round(targetCenter - currentCenter);
+      if(shiftY===0) return m;
+
+      const out = makeMatrix(0);
+      for(let y=0;y<SIZE;y++){
+        for(let x=0;x<SIZE;x++){
+          const v = m[y][x];
+          if(v>0.02) setPx(out, x, y + shiftY, v);
+        }
+      }
+      return out;
+    }
+
     function easeOutCubic(x){ return 1 - Math.pow(1-x,3); }
 
     // --------- Emotions definition (12) ---------
@@ -1149,7 +1177,7 @@
           addMouthSmile(m);
       }
 
-      return m;
+      return centerPatternVertically(m);
     }
 
     // --------- Emotion analysis (rule-based, CN/EN) ---------
