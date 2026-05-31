@@ -820,13 +820,21 @@
     }
 
     function fillCircle(m,cx,cy,r,v=2){
-      cx*=SCALE; cy*=SCALE; r*=SCALE;
-      const minX = Math.floor(cx-r), maxX = Math.ceil(cx+r);
-      const minY = Math.floor(cy-r), maxY = Math.ceil(cy+r);
+      cx *= SCALE;
+      cy *= SCALE;
+      r = Math.max(0, Math.round(r * SCALE));
+      if(!Number.isFinite(cx) || !Number.isFinite(cy) || !Number.isFinite(r)) return;
+
+      const minX = clamp(Math.floor(cx - r), 0, SIZE - 1);
+      const maxX = clamp(Math.ceil(cx + r), 0, SIZE - 1);
+      const minY = clamp(Math.floor(cy - r), 0, SIZE - 1);
+      const maxY = clamp(Math.ceil(cy + r), 0, SIZE - 1);
+      const rr = r * r;
+
       for(let y=minY;y<=maxY;y++){
         for(let x=minX;x<=maxX;x++){
           const dx=x-cx, dy=y-cy;
-          if(dx*dx + dy*dy <= r*r) _setPx(m,x,y,v);
+          if(dx*dx + dy*dy <= rr) _setPx(m,x,y,v);
         }
       }
     }
