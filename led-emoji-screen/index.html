@@ -1129,7 +1129,8 @@
         case 'focus':
           addEyesFocus(m, t);
           drawThick(m, (mm)=>{
-            drawArc(mm, 12, 14, 3, Math.PI*0.2, Math.PI*0.8, 2);
+            // 减小弧度使其接近直线：增大半径并收窄角度范围
+            drawArc(mm, 12, -23, 40, Math.PI*0.48, Math.PI*0.52, 2);
           }, 0);
           break;
 
