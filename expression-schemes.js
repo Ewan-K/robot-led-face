@@ -13,7 +13,6 @@
       footerHintEl,
       makeMatrix,
       clamp,
-      _setPx,
       setPx,
       drawLine,
       drawCircle,
@@ -76,50 +75,6 @@
       }
       if(best <= 0.01) bestId = fallbackId;
       return { bestId, scores };
-    }
-
-    function shiftMatrix(matrix, shiftY){
-      if(!matrix || shiftY === 0) return matrix;
-      const out = makeMatrix(0);
-      for(let y=0; y<SIZE; y++){
-        for(let x=0; x<SIZE; x++){
-          const v = matrix[y][x];
-          if(v > 0.02) _setPx(out, x, y + shiftY, v);
-        }
-      }
-      return out;
-    }
-
-    function centerRenderSpec(spec){
-      const renderSpec = spec && spec.base ? spec : { base: spec, accents: [] };
-      const layers = [renderSpec.base].concat((renderSpec.accents || []).map((accent)=>accent.matrix));
-      let minY = SIZE;
-      let maxY = -1;
-
-      layers.forEach((matrix)=>{
-        if(!matrix) return;
-        for(let y=0; y<SIZE; y++){
-          for(let x=0; x<SIZE; x++){
-            if(matrix[y][x] > 0.02){
-              minY = Math.min(minY, y);
-              maxY = Math.max(maxY, y);
-            }
-          }
-        }
-      });
-
-      if(maxY < 0) return renderSpec;
-      const shiftY = Math.round(((SIZE - 1) / 2) - ((minY + maxY) / 2));
-      if(shiftY === 0) return renderSpec;
-
-      return {
-        base: shiftMatrix(renderSpec.base, shiftY),
-        accents: (renderSpec.accents || []).map((accent)=>({
-          color: accent.color,
-          intensity: accent.intensity,
-          matrix: shiftMatrix(accent.matrix, shiftY)
-        }))
-      };
     }
 
     function drawLayer(matrix, color, intensityScale){
@@ -512,213 +467,177 @@
         { id:'sorry', emoji:'🥺', label:'抱歉', color:'#f7fbff' }
       ];
       const EMOTION_BY_ID = Object.fromEntries(EMOTIONS.map((item)=>[item.id, item]));
-      const FACE = { leftEyeX: 8, rightEyeX: 16, eyeY: 12.1, browY: 6.0 };
-      const TEAR_COLOR = '#7be8ff';
-      const SWEAT_COLOR = '#7be8ff';
-      const RAY_COLOR = '#90ffe1';
+      const PALETTE = {
+        bg: '#02030a',
+        line: '#ffffff',
+        accent: '#5ce8d0'
+      };
 
-      function faceBase(){ return makeMatrix(0); }
-      function lineStroke(m, x0, y0, x1, y1, thickness){
-        drawThick(m, (mm)=>{ drawLine(mm, x0, y0, x1, y1, 2); }, (thickness === null || thickness === undefined) ? 0.72 : thickness);
+      function getScene(){
+        const W = canvas.width;
+        const H = canvas.height;
+        const dim = Math.min(W, H);
+        const board = dim * 0.72;
+        return {
+          W,
+          H,
+          dim,
+          board,
+          unit: board / 24,
+          ox: (W - board) / 2,
+          oy: (H - board) / 2,
+          lineWidth: Math.max(8, dim * 0.034)
+        };
       }
-      function arcStroke(m, cx, cy, radius, start, end, thickness){
-        drawThick(m, (mm)=>{ drawArc(mm, cx, cy, radius, start, end, 2); }, (thickness === null || thickness === undefined) ? 0.8 : thickness);
+      function point(scene, x, y){
+        return [scene.ox + x * scene.unit, scene.oy + y * scene.unit];
       }
-      function eyeArcUp(m, cx, cy, radius, tilt){
-        const eyeY = (cy === null || cy === undefined) ? FACE.eyeY : cy;
-        const r = radius || 2.1;
-        arcStroke(m, cx, eyeY + (tilt || 0), r, Math.PI * 0.14, Math.PI * 0.86, 0.82);
+      function clearSchemeTwo(scene){
+        ctx.clearRect(0, 0, scene.W, scene.H);
+        ctx.fillStyle = PALETTE.bg;
+        ctx.fillRect(0, 0, scene.W, scene.H);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
       }
-      function eyeArcDown(m, cx, cy, radius, tilt){
-        const eyeY = (cy === null || cy === undefined) ? FACE.eyeY : cy;
-        const r = radius || 2.05;
-        arcStroke(m, cx, eyeY + (tilt || 0), r, Math.PI * 1.14, Math.PI * 1.86, 0.82);
+      function strokePath(color, width){
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.shadowBlur = width * 1.2;
+        ctx.shadowColor = color;
       }
-      function ringEye(m, cx, cy, radius, thickness){
-        arcStroke(m, cx, cy, radius || 1.95, 0, Math.PI * 2, (thickness === null || thickness === undefined) ? 0.82 : thickness);
+      function drawLineShape(scene, x0, y0, x1, y1, widthScale, color){
+        const [sx, sy] = point(scene, x0, y0);
+        const [ex, ey] = point(scene, x1, y1);
+        ctx.save();
+        strokePath(color || PALETTE.line, scene.lineWidth * (widthScale || 1));
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+        ctx.restore();
       }
-      function eyeRings(m, opts){
-        const cfg = opts || {};
-        ringEye(m, FACE.leftEyeX, FACE.eyeY + (cfg.leftOffset || 0), cfg.radius, cfg.thickness);
-        ringEye(m, FACE.rightEyeX, FACE.eyeY + (cfg.rightOffset || 0), cfg.radius, cfg.thickness);
+      function drawArcShape(scene, cx, cy, radius, start, end, widthScale, color){
+        const [px, py] = point(scene, cx, cy);
+        ctx.save();
+        strokePath(color || PALETTE.line, scene.lineWidth * (widthScale || 1));
+        ctx.beginPath();
+        ctx.arc(px, py, radius * scene.unit, start, end);
+        ctx.stroke();
+        ctx.restore();
       }
-      function browLineSingle(m, cx, y, width, tilt, thickness){
-        const half = (width || 3.8) / 2;
-        const slant = tilt || 0;
-        lineStroke(m, cx - half, y - slant, cx + half, y + slant, thickness);
+      function drawCircleShape(scene, cx, cy, radius, widthScale, color){
+        drawArcShape(scene, cx, cy, radius, 0, Math.PI * 2, widthScale, color || PALETTE.line);
       }
-      function browArcUpSingle(m, cx, y, radius, thickness){
-        arcStroke(m, cx, y, radius || 1.8, Math.PI * 1.14, Math.PI * 1.86, (thickness === null || thickness === undefined) ? 0.76 : thickness);
+      function drawDropShape(scene, cx, cy, scale, color){
+        const [px, py] = point(scene, cx, cy);
+        const s = scene.unit * scale;
+        ctx.save();
+        ctx.fillStyle = color || PALETTE.accent;
+        ctx.shadowBlur = scene.lineWidth * 1.1;
+        ctx.shadowColor = color || PALETTE.accent;
+        ctx.beginPath();
+        ctx.moveTo(px, py - s * 1.2);
+        ctx.quadraticCurveTo(px + s * 0.9, py - s * 0.3, px + s * 0.55, py + s * 0.6);
+        ctx.quadraticCurveTo(px, py + s * 1.35, px - s * 0.55, py + s * 0.6);
+        ctx.quadraticCurveTo(px - s * 0.9, py - s * 0.3, px, py - s * 1.2);
+        ctx.fill();
+        ctx.restore();
       }
-      function browArcDownSingle(m, cx, y, radius, thickness){
-        arcStroke(m, cx, y, radius || 1.8, Math.PI * 0.14, Math.PI * 0.86, (thickness === null || thickness === undefined) ? 0.76 : thickness);
+      function topArc(scene, cx, cy, radius, widthScale, color){
+        drawArcShape(scene, cx, cy, radius, Math.PI * 0.15, Math.PI * 0.85, widthScale, color);
       }
-      function joyfulBrows(m){
-        browArcUpSingle(m, FACE.leftEyeX, FACE.browY, 1.75, 0.74);
-        browArcUpSingle(m, FACE.rightEyeX, FACE.browY, 1.75, 0.74);
+      function bottomArc(scene, cx, cy, radius, widthScale, color){
+        drawArcShape(scene, cx, cy, radius, Math.PI * 1.15, Math.PI * 1.85, widthScale, color);
       }
-      function angryBrows(m){
-        browLineSingle(m, FACE.leftEyeX, FACE.browY - 0.05, 3.9, -0.48, 0.82);
-        browLineSingle(m, FACE.rightEyeX, FACE.browY - 0.05, 3.9, 0.48, 0.82);
-      }
-      function sadBrows(m){
-        browArcDownSingle(m, FACE.leftEyeX, FACE.browY - 0.15, 1.7, 0.74);
-        browArcDownSingle(m, FACE.rightEyeX, FACE.browY - 0.15, 1.7, 0.74);
-      }
-      function anxiousBrows(m){
-        browLineSingle(m, FACE.leftEyeX, FACE.browY, 3.9, 0, 0.78);
-        browLineSingle(m, FACE.rightEyeX, FACE.browY, 3.9, 0, 0.78);
-      }
-      function scepticalBrows(m){
-        browArcUpSingle(m, FACE.leftEyeX, FACE.browY - 0.2, 1.65, 0.74);
-        browLineSingle(m, FACE.rightEyeX, FACE.browY + 0.35, 3.6, 0, 0.76);
-      }
-      function brightBrows(m){
-        joyfulBrows(m);
-      }
-      function listeningBrows(m){
-        browLineSingle(m, FACE.leftEyeX, FACE.browY + 0.25, 3.5, 0, 0.76);
-        browLineSingle(m, FACE.rightEyeX, FACE.browY + 0.25, 3.5, 0, 0.76);
-      }
-      function sweatingBrows(m){
-        browArcUpSingle(m, FACE.leftEyeX, FACE.browY - 0.05, 1.75, 0.74);
-        browArcUpSingle(m, FACE.rightEyeX, FACE.browY - 0.05, 1.75, 0.74);
-      }
-      function broodingBrows(m){
-        browLineSingle(m, FACE.leftEyeX, FACE.browY, 4.4, 0, 1.02);
-        browLineSingle(m, FACE.rightEyeX, FACE.browY, 4.4, 0, 1.02);
-      }
-      function pleasedBrows(m){
-        browArcUpSingle(m, FACE.leftEyeX, FACE.browY + 0.05, 1.6, 0.74);
-        browArcUpSingle(m, FACE.rightEyeX, FACE.browY + 0.05, 1.6, 0.74);
-      }
-      function sorryBrows(m){
-        browArcDownSingle(m, FACE.leftEyeX, FACE.browY + 0.35, 1.45, 0.7);
-        browArcDownSingle(m, FACE.rightEyeX, FACE.browY + 0.35, 1.45, 0.7);
-      }
-      function flirtingMarks(m){
-        browArcDownSingle(m, FACE.leftEyeX - 0.25, FACE.browY + 0.4, 1.55, 0.58);
-        lineStroke(m, FACE.leftEyeX - 1.95, FACE.eyeY - 0.45, FACE.leftEyeX + 0.65, FACE.eyeY + 1.55, 0.58);
-        browArcUpSingle(m, FACE.rightEyeX + 0.2, FACE.browY - 0.1, 1.5, 0.58);
-        arcStroke(m, FACE.rightEyeX + 0.15, FACE.eyeY - 0.65, 2.0, Math.PI * 0.14, Math.PI * 0.86, 0.58);
-      }
-      function joyfulEyes(m, sway){
-        eyeArcUp(m, FACE.leftEyeX, FACE.eyeY + sway, 2.1, 0);
-        eyeArcUp(m, FACE.rightEyeX, FACE.eyeY + sway, 2.1, 0);
-      }
-      function sadEyes(m){
-        eyeArcDown(m, FACE.leftEyeX, FACE.eyeY + 0.15, 2.0, 0);
-        eyeArcDown(m, FACE.rightEyeX, FACE.eyeY + 0.15, 2.0, 0);
-      }
-      function brightEyes(m){
-        eyeArcUp(m, FACE.leftEyeX, FACE.eyeY, 2.0, 0);
-        eyeArcUp(m, FACE.rightEyeX, FACE.eyeY, 2.0, 0);
-      }
-      function sweatingEyes(m, sway){
-        eyeArcUp(m, FACE.leftEyeX, FACE.eyeY + sway * 0.7, 2.0, 0);
-        eyeArcUp(m, FACE.rightEyeX, FACE.eyeY + sway * 0.7, 2.0, 0);
-      }
-      function pleasedEyes(m){
-        eyeArcUp(m, FACE.leftEyeX, FACE.eyeY + 0.05, 1.95, -0.22);
-        eyeArcUp(m, FACE.rightEyeX, FACE.eyeY + 0.05, 1.95, 0.22);
-      }
-      function addScepticalLeftEyeBump(m){
-        lineStroke(m, FACE.leftEyeX - 0.6, FACE.eyeY - 2.3, FACE.leftEyeX + 0.35, FACE.eyeY - 2.65, 0.5);
-      }
-      function tearAccent(side){
-        const accent = makeMatrix(0);
-        const x = side === 'left' ? 5.35 : 18.0;
-        const y = FACE.eyeY + 3.0;
-        fillCircle(accent, x, y - 0.25, 0.38, 2);
-        lineStroke(accent, x - 0.08, y, x + 0.3, y + 1.05, 0.46);
-        lineStroke(accent, x + 0.3, y + 1.05, x + 0.82, y + 0.45, 0.46);
-        return accent;
-      }
-      function sweatAccents(){
-        return [
-          { matrix: tearAccent('right'), color: SWEAT_COLOR, intensity: 1 },
-          { matrix: (()=>{
-            const accent = makeMatrix(0);
-            const x = 20.0;
-            const y = FACE.eyeY + 1.65;
-            fillCircle(accent, x, y - 0.22, 0.34, 2);
-            lineStroke(accent, x - 0.04, y, x + 0.22, y + 0.88, 0.44);
-            lineStroke(accent, x + 0.22, y + 0.88, x + 0.72, y + 0.32, 0.44);
-            return accent;
-          })(), color: SWEAT_COLOR, intensity: 1 }
-        ];
-      }
-      function rayAccents(){
-        const accent = makeMatrix(0);
-        lineStroke(accent, 8.9, 2.9, 8.6, 1.2, 0.5);
-        lineStroke(accent, 12.0, 2.7, 12.0, 0.9, 0.5);
-        lineStroke(accent, 15.1, 2.9, 15.4, 1.2, 0.5);
-        return accent;
-      }
-
-      function patternFor(emotionId, t){
-        const base = faceBase();
-        const accents = [];
-        const sway = Math.sin(t * 0.0024) * 0.12;
-
+      function drawSchemeTwo(emotionId){
+        const scene = getScene();
+        clearSchemeTwo(scene);
         switch(emotionId){
           case 'flirting':
-            flirtingMarks(base);
+            drawLineShape(scene, 5.0, 7.3, 7.9, 7.2, 0.84);
+            drawLineShape(scene, 5.2, 9.5, 8.2, 9.9, 0.84);
+            topArc(scene, 16.2, 7.1, 1.55, 0.84);
+            topArc(scene, 16.0, 11.0, 2.15, 0.9);
             break;
           case 'joyful':
-            joyfulBrows(base);
-            joyfulEyes(base, sway);
+            topArc(scene, 8.0, 7.0, 1.65, 0.82);
+            topArc(scene, 16.0, 7.0, 1.65, 0.82);
+            topArc(scene, 8.0, 12.0, 2.25, 0.9);
+            topArc(scene, 16.0, 12.0, 2.25, 0.9);
             break;
           case 'angry':
-            angryBrows(base);
-            eyeRings(base, { radius: 1.9 });
+            drawLineShape(scene, 6.0, 7.1, 9.5, 5.5, 0.88);
+            drawLineShape(scene, 14.0, 5.5, 17.5, 7.1, 0.88);
+            drawCircleShape(scene, 8.0, 12.2, 1.85, 0.92);
+            drawCircleShape(scene, 16.0, 12.2, 1.85, 0.92);
             break;
           case 'sad':
-            sadBrows(base);
-            sadEyes(base);
-            accents.push({ matrix: tearAccent('left'), color: TEAR_COLOR, intensity: 1 });
+            bottomArc(scene, 8.0, 6.8, 1.65, 0.8);
+            bottomArc(scene, 16.0, 6.8, 1.65, 0.8);
+            bottomArc(scene, 8.0, 11.4, 2.0, 0.86);
+            bottomArc(scene, 16.0, 11.4, 2.0, 0.86);
+            drawDropShape(scene, 18.6, 14.3, 0.7, PALETTE.accent);
             break;
           case 'anxious':
-            anxiousBrows(base);
-            eyeRings(base, { radius: 1.95 });
+            drawLineShape(scene, 6.2, 7.0, 9.8, 7.0, 0.82);
+            drawLineShape(scene, 14.2, 7.0, 17.8, 7.0, 0.82);
+            drawCircleShape(scene, 8.0, 12.1, 1.92, 0.9);
+            drawCircleShape(scene, 16.0, 12.1, 1.92, 0.9);
             break;
           case 'sceptical':
-            scepticalBrows(base);
-            eyeRings(base, { radius: 1.92 });
-            addScepticalLeftEyeBump(base);
+            topArc(scene, 8.0, 6.2, 1.55, 0.8);
+            drawLineShape(scene, 14.4, 7.4, 17.6, 7.4, 0.8);
+            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9);
+            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
+            topArc(scene, 8.0, 10.2, 0.7, 0.55);
             break;
           case 'bright':
-            brightBrows(base);
-            brightEyes(base);
-            accents.push({ matrix: rayAccents(), color: RAY_COLOR, intensity: 1 });
+            topArc(scene, 8.0, 6.7, 1.8, 0.82);
+            topArc(scene, 16.0, 6.7, 1.8, 0.82);
+            topArc(scene, 8.0, 12.1, 2.15, 0.9);
+            topArc(scene, 16.0, 12.1, 2.15, 0.9);
+            drawLineShape(scene, 9.1, 3.4, 8.8, 1.5, 0.55, PALETTE.accent);
+            drawLineShape(scene, 12.0, 3.0, 12.0, 1.0, 0.55, PALETTE.accent);
+            drawLineShape(scene, 14.9, 3.4, 15.2, 1.5, 0.55, PALETTE.accent);
             break;
           case 'listening':
-            listeningBrows(base);
-            eyeRings(base, { radius: 1.92 });
+            drawLineShape(scene, 6.4, 7.2, 9.6, 7.2, 0.8);
+            drawLineShape(scene, 14.4, 7.2, 17.6, 7.2, 0.8);
+            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9);
+            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
             break;
           case 'sweating':
-            sweatingBrows(base);
-            sweatingEyes(base, sway);
-            sweatAccents().forEach((accent)=>accents.push(accent));
+            topArc(scene, 8.0, 6.9, 1.65, 0.8);
+            topArc(scene, 16.0, 6.9, 1.65, 0.8);
+            topArc(scene, 8.0, 12.0, 2.15, 0.88);
+            topArc(scene, 16.0, 12.0, 2.15, 0.88);
+            drawDropShape(scene, 18.2, 13.9, 0.68, PALETTE.accent);
+            drawDropShape(scene, 20.1, 15.0, 0.58, PALETTE.accent);
             break;
           case 'brooding':
-            broodingBrows(base);
-            eyeRings(base, { radius: 1.92, thickness: 0.84 });
+            drawLineShape(scene, 5.8, 7.0, 10.2, 7.0, 1.02);
+            drawLineShape(scene, 13.8, 7.0, 18.2, 7.0, 1.02);
+            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9);
+            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
             break;
           case 'pleased':
-            pleasedBrows(base);
-            pleasedEyes(base);
+            drawLineShape(scene, 6.1, 6.4, 9.6, 7.4, 0.8);
+            drawLineShape(scene, 14.4, 7.4, 17.9, 6.4, 0.8);
+            topArc(scene, 8.0, 11.7, 2.0, 0.88);
+            topArc(scene, 16.0, 11.7, 2.0, 0.88);
             break;
           case 'sorry':
-            sorryBrows(base);
-            eyeRings(base, { radius: 1.6, thickness: 0.76 });
+            bottomArc(scene, 8.0, 7.1, 1.4, 0.75);
+            bottomArc(scene, 16.0, 7.1, 1.4, 0.75);
+            drawCircleShape(scene, 8.0, 12.2, 1.55, 0.82);
+            drawCircleShape(scene, 16.0, 12.2, 1.55, 0.82);
             break;
           default:
-            listeningBrows(base);
-            eyeRings(base, { radius: 1.92 });
+            drawLineShape(scene, 6.4, 7.2, 9.6, 7.2, 0.8);
+            drawLineShape(scene, 14.4, 7.2, 17.6, 7.2, 0.8);
+            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9);
+            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
         }
-
-        return centerRenderSpec({ base, accents });
       }
 
       const RULES = {
@@ -784,12 +703,12 @@
         id: 'scheme2',
         title: '方案二（纯眼睛参考图）',
         footerText: '12 种预设表情：挑逗、快乐、愤怒、悲伤、焦虑、怀疑、盛赞、倾听、流汗、思考、愉快、抱歉。默认态为“倾听”。',
-        footerHint: '说明：方案二按参考图重绘为纯眼睛风格，采用圆弧眼眶 + 圆环瞳孔 + 局部汗滴/泪滴/放射线规则匹配。',
+        footerHint: '说明：方案二不再模拟 LED 点阵，直接在黑色屏幕区域内用 Canvas 线条重绘 12 种表情。',
         defaultEmotionId: 'listening',
         emotions: EMOTIONS,
         emotionById: EMOTION_BY_ID,
         examples,
-        patternFor,
+        draw: drawSchemeTwo,
         pickEmotion
       };
     }
@@ -883,6 +802,10 @@
 
     function tick(t){
       const emotion = activeScheme.emotionById[currentEmotionId] || activeScheme.emotionById[activeScheme.defaultEmotionId];
+      if(typeof activeScheme.draw === 'function'){
+        activeScheme.draw(currentEmotionId, t, emotion);
+        return;
+      }
       const renderSpec = activeScheme.patternFor(currentEmotionId, t);
       drawLED(renderSpec, emotion.color || '#f7fbff');
     }
