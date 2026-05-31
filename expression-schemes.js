@@ -597,9 +597,10 @@
         browArcDownSingle(m, FACE.rightEyeX, FACE.browY + 0.35, 1.45, 0.7);
       }
       function flirtingMarks(m){
-        browLineSingle(m, FACE.leftEyeX - 0.55, FACE.eyeY - 0.95, 2.95, 0.04, 0.68);
-        browLineSingle(m, FACE.leftEyeX - 0.35, FACE.eyeY + 0.7, 3.05, 0.1, 0.68);
-        eyeArcUp(m, FACE.rightEyeX + 0.1, FACE.eyeY - 0.55, 2.0, 0);
+        browArcDownSingle(m, FACE.leftEyeX - 0.3, FACE.browY + 0.35, 1.35, 0.68);
+        lineStroke(m, FACE.leftEyeX - 1.55, FACE.eyeY - 0.25, FACE.leftEyeX + 0.45, FACE.eyeY + 1.35, 0.68);
+        browArcUpSingle(m, FACE.rightEyeX + 0.2, FACE.browY - 0.45, 1.35, 0.68);
+        eyeArcUp(m, FACE.rightEyeX + 0.15, FACE.eyeY - 0.8, 1.8, 0);
       }
       function joyfulEyes(m, sway){
         eyeArcUp(m, FACE.leftEyeX, FACE.eyeY + sway, 2.1, 0);
