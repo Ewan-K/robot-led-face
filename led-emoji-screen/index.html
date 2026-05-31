@@ -887,7 +887,7 @@
       for(let y=0;y<SIZE;y++){
         for(let x=0;x<SIZE;x++){
           const v = m[y][x];
-          if(v>0.02) setPx(out, x, y + shiftY, v);
+          if(v>0.02) _setPx(out, x, y + shiftY, v);
         }
       }
       return out;
