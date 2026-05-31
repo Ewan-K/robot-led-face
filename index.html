@@ -606,6 +606,7 @@
           <div class="legend">
             <div class="pill"><span class="mini"></span><span>像素发光</span></div>
             <div class="pill"><span class="mini" style="background:var(--warn); box-shadow:0 0 16px rgba(255,176,46,.35)"></span><span>轻微闪烁</span></div>
+            <div class="pill"><span class="mini" style="background:var(--ok); box-shadow:0 0 16px rgba(107,255,182,.35)"></span><span id="schemeInfo">方案加载中</span></div>
           </div>
         </div>
 
@@ -614,8 +615,8 @@
         </div>
 
         <div class="footer">
-          12 种预设表情：基础情绪（快乐/悲伤/愤怒/恐惧惊讶/厌恶）＋交互状态（专注/思考/确认/困惑）＋社交信号（眨眼/困倦/庆祝）。
-          <div class="tiny">说明：情绪分析使用前端规则引擎（关键词 + 标点语气 + 轻量语义规则），并给出一个最匹配结果。</div>
+          <span id="footerText">12 种预设表情：基础情绪（快乐/悲伤/愤怒/恐惧惊讶/厌恶）＋交互状态（专注/思考/确认/困惑）＋社交信号（眨眼/困倦/庆祝）。</span>
+          <div class="tiny" id="footerHint">说明：情绪分析使用前端规则引擎（关键词 + 标点语气 + 轻量语义规则），并给出一个最匹配结果。</div>
         </div>
       </section>
 
@@ -672,6 +673,7 @@
             <span class="tiny">Enter</span>
           </button>
           <button class="btn secondary" id="randomBtn" type="button">随机示例</button>
+          <button class="btn secondary" id="switchSchemeBtn" type="button">切换表情方案</button>
           <div class="pill" title="点阵规模">
             <span class="mini" style="background:var(--neon-mag); box-shadow:0 0 16px rgba(255,59,245,.35)"></span>
             <span>LED 网格</span>
@@ -685,6 +687,7 @@
     </div>
   </div>
 
+  <script src="expression-schemes.js"></script>
   <script>
   (function(){
     const SIZE = 96; // LED grid
@@ -852,674 +855,82 @@
     }
 
 
-    // --------- Emotions definition (12) ---------
-    const EMOTIONS = [
-      { id:'happy',  emoji:'😊', label:'快乐/友好', group:'Basic', color:'#ffef6a' },
-      { id:'sad',    emoji:'😢', label:'悲伤/同情', group:'Basic', color:'#5ad7ff' },
-      { id:'angry',  emoji:'😠', label:'愤怒/警告', group:'Basic', color:'#ff375f' },
-      { id:'fear',   emoji:'😨', label:'恐惧/惊讶', group:'Basic', color:'#bfa8ff' },
-      { id:'disgust',emoji:'🤢', label:'厌恶/拒绝', group:'Basic', color:'#8dff7a' },
-
-      { id:'focus',  emoji:'👀', label:'专注/倾听', group:'Interaction', color:'#18f7ff' },
-      { id:'think',  emoji:'🤔', label:'思考/处理中', group:'Interaction', color:'#ffb02e' },
-      { id:'confirm',emoji:'✅', label:'确认/完成', group:'Interaction', color:'#6bffb6' },
-      { id:'confuse',emoji:'❓', label:'困惑/疑问', group:'Interaction', color:'#ff8df2' },
-
-      { id:'wink',   emoji:'😉', label:'眨眼/调皮', group:'Social', color:'#ff3bf5' },
-      { id:'sleepy', emoji:'😴', label:'困倦/低电量', group:'Social', color:'#8aa0ff' },
-      { id:'party',  emoji:'🎉', label:'庆祝/兴奋', group:'Social', color:'#b6ff4a' },
-    ];
-
-    const EMOTION_BY_ID = Object.fromEntries(EMOTIONS.map(e=>[e.id,e]));
-
-    // --------- Pattern generator ---------
-    const FACE = {
-      leftEyeX: 8,
-      rightEyeX: 16,
-      eyeY: 10,
-      browOuterY: 4,
-      browInnerY: 5
-    };
-
-    function faceBase(){
-      return makeMatrix(0);
-    }
-
-    function addEyesSmile(m){
-      drawThick(m, (mm)=>{
-        drawArc(mm, FACE.leftEyeX, FACE.eyeY + 0.2, 1.8, Math.PI*0.2, Math.PI*0.8, 2);
-        drawArc(mm, FACE.rightEyeX, FACE.eyeY + 0.2, 1.8, Math.PI*0.2, Math.PI*0.8, 2);
-      }, 0);
-    }
-
-    function addEyesRound(m, open=1){
-      const r = open>0.9 ? 1.8 : (open>0.55 ? 1.5 : 1.1);
-      drawThick(m, (mm)=>{
-        drawCircle(mm, FACE.leftEyeX, FACE.eyeY, r, 2);
-        drawCircle(mm, FACE.rightEyeX, FACE.eyeY, r, 2);
-      }, 0);
-      if(open>0.75){
-        setPx(m, FACE.leftEyeX, FACE.eyeY, 2);
-        setPx(m, FACE.rightEyeX, FACE.eyeY, 2);
-      }
-    }
-
-    function addEyesFocus(m, t){
-      const pts = [[0, -1], [0, 0], [1, 0]]; // 上方 -> 中间 -> 右方
-      const idx = Math.floor(t * 0.001) % pts.length;
-      const [dx, dy] = pts[idx];
-      drawThick(m, (mm)=>{
-        drawCircle(mm, FACE.leftEyeX, FACE.eyeY, 1.8, 2);
-        drawCircle(mm, FACE.rightEyeX, FACE.eyeY, 1.8, 2);
-      }, 0);
-      setPx(m, FACE.leftEyeX + dx, FACE.eyeY + dy, 2);
-      setPx(m, FACE.rightEyeX + dx, FACE.eyeY + dy, 2);
-    }
-
-    function addEyesLine(m, leftY=FACE.eyeY, rightY=FACE.eyeY, tilt=0, v=2){
-      drawThick(m, (mm)=>{
-        drawLine(mm, FACE.leftEyeX - 2, leftY - tilt, FACE.leftEyeX + 2, leftY + tilt, v);
-        drawLine(mm, FACE.rightEyeX - 2, rightY + tilt, FACE.rightEyeX + 2, rightY - tilt, v);
-      }, 0);
-    }
-
-    function addBrowsAngry(m){
-      drawThick(m, (mm)=>{
-        drawLine(mm, 5, FACE.browOuterY, 10, FACE.browInnerY, 2);
-        drawLine(mm, 14, FACE.browInnerY, 19, FACE.browOuterY, 2);
-      }, 0);
-    }
-
-    function addBrowsSad(m){
-      drawThick(m, (mm)=>{
-        drawLine(mm, 5, FACE.browInnerY, 10, FACE.browOuterY, 2);
-        drawLine(mm, 14, FACE.browOuterY, 19, FACE.browInnerY, 2);
-      }, 0);
-    }
-
-    function addBrowsConfused(m, t){
-      const wobble = Math.round(Math.sin(t*0.0016)*1);
-      drawThick(m, (mm)=>{
-        drawLine(mm, 5, FACE.browOuterY + wobble, 10, FACE.browOuterY - 1, 2);
-        drawLine(mm, 14, FACE.browOuterY - 1, 19, FACE.browOuterY + wobble, 2);
-      }, 0);
-    }
-
-    function addMouthSmile(m){
-      drawThick(m, (mm)=>{
-        drawArc(mm, 12, 16.1, 5.5, Math.PI*0.20, Math.PI*0.80, 2);
-      }, 0);
-    }
-
-    function addMouthFrown(m){
-      drawThick(m, (mm)=>{
-        drawArc(mm, 12, 20.0, 5.2, Math.PI*1.20, Math.PI*1.80, 2);
-      }, 0);
-    }
-
-    function addMouthFlat(m){
-      drawThick(m, (mm)=>{
-        drawLine(mm, 9, 17, 15, 17, 2);
-      }, 0);
-    }
-
-    function addMouthOpen(m){
-      drawCircle(m, 12, 18.5, 2.8, 2);
-    }
-
-    function addEyesFearSurprised(m){
-      // Reference-style big, solid LED eyes.
-      fillCircle(m, FACE.leftEyeX, FACE.eyeY + 0.6, 2.6, 2);
-      fillCircle(m, FACE.rightEyeX, FACE.eyeY + 0.6, 2.6, 2);
-      // A small lower taper makes the filled eyes feel closer to the pixel reference.
-      drawThick(m, (mm)=>{
-        drawLine(mm, FACE.leftEyeX - 1.3, FACE.eyeY + 3.0, FACE.leftEyeX, FACE.eyeY + 3.8, 2);
-        drawLine(mm, FACE.rightEyeX, FACE.eyeY + 3.8, FACE.rightEyeX + 1.3, FACE.eyeY + 3.0, 2);
-      }, 0);
-    }
-
-    function addBrowsFearSurprised(m){
-      // Short arcs above the outer side of each eye, lifting upward like the reference.
-      drawThick(m, (mm)=>{
-        drawArc(mm, FACE.leftEyeX - 2.3, FACE.eyeY - 6.05, 3.0, Math.PI*0.13, Math.PI*0.58, 2);
-        drawArc(mm, FACE.rightEyeX + 2.3, FACE.eyeY - 6.05, 3.0, Math.PI*0.42, Math.PI*0.87, 2);
-      }, 0);
-    }
-
-    function addMouthFearSurprised(m){
-      // Wide zigzag/wave mouth with small upturned ends.
-      drawThick(m, (mm)=>{
-        const pts = [
-          [5.3, 20.0], [6.3, 18.8], [7.4, 17.9], [8.4, 18.5],
-          [9.8, 20.0], [11.1, 19.1], [12.0, 17.6], [13.2, 17.7],
-          [14.4, 19.4], [15.5, 20.1], [16.7, 18.3], [17.9, 18.6],
-          [18.9, 19.9]
-        ];
-        for(let i=0;i<pts.length-1;i++) drawLine(mm, pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1], 2);
-        drawLine(mm, 5.3, 20.0, 4.5, 21.0, 2);
-        drawLine(mm, 18.9, 19.9, 19.7, 21.0, 2);
-      }, 0);
-    }
-
-    function addNoseWrinkle(m){
-      drawThick(m, (mm)=>{
-        drawLine(mm, 11, 12, 13, 12, 2);
-        drawLine(mm, 10, 13, 14, 13, 1);
-      }, 0);
-    }
-
-    function addTear(m, side='left'){
-      const x = side==='left' ? 6 : 18;
-      setPx(m, x, 13, 2);
-      setPx(m, x, 14, 2);
-      setPx(m, x+1, 15, 1);
-    }
-
-    function addZzz(m, t){
-      // animated Z
-      const phase = (t*0.001) % 1;
-      const yOff = Math.round(phase*3);
-      drawThick(m, (mm)=>{
-        drawLine(mm, 17, 5+yOff, 21, 5+yOff, 1);
-        drawLine(mm, 21, 5+yOff, 17, 9+yOff, 1);
-        drawLine(mm, 17, 9+yOff, 21, 9+yOff, 1);
-      }, 0);
-    }
-
-    function addPartySparkles(m, t){
-      const tw = (v)=> (v>0.5?2:1);
-      const s1 = Math.sin(t*0.004);
-      const s2 = Math.sin(t*0.006 + 2.1);
-      const s3 = Math.sin(t*0.005 + 4.2);
-      setPx(m, 4, 6, tw((s1+1)/2));
-      setPx(m, 20, 7, tw((s2+1)/2));
-      setPx(m, 18, 4, tw((s3+1)/2));
-      setPx(m, 6, 4, tw((s2+1)/2));
-    }
-
-    function addCheckMark(m, t){
-      const blink = (Math.sin(t*0.004)+1)/2;
-      const v = blink>0.55 ? 2 : 1;
-      drawThick(m, (mm)=>{
-        drawLine(mm, 4, 18, 8, 21, v);
-        drawLine(mm, 8, 21, 14, 15, v);
-      }, 0);
-    }
-
-    function addQuestionMark(m, t){
-      const phase = (Math.sin(t*0.004)+1)/2;
-      const v = phase>0.5?2:1;
-      drawThick(m, (mm)=>{
-        drawArc(mm, 18, 6, 2.7, Math.PI*1.05, Math.PI*1.95, v);
-        drawLine(mm, 18, 8, 18, 10, v);
-      }, 0);
-      setPx(m, 18, 12, v);
-    }
-
-    function patternFor(emotionId, t){
-      const base = faceBase();
-      const m = base;
-
-      // default eye blink timing
-      const blink = (Math.sin(t*0.0032)+1)/2;
-      const blinkClosed = blink>0.84;
-
-      switch(emotionId){
-        case 'happy':
-          addEyesSmile(m);
-          addMouthSmile(m);
-          break;
-
-        case 'sad':
-          addBrowsSad(m);
-          addEyesRound(m, blinkClosed?0.45:0.82);
-          addMouthFrown(m);
-          break;
-
-        case 'angry':
-          addBrowsAngry(m);
-          addEyesLine(m, FACE.eyeY, FACE.eyeY, 0, 2);
-          addMouthFlat(m);
-          break;
-
-        case 'fear':
-          addBrowsFearSurprised(m);
-          addEyesFearSurprised(m);
-          addMouthFearSurprised(m);
-          break;
-
-        case 'disgust':
-          drawThick(m, (mm)=>{
-            drawLine(mm, 6, FACE.eyeY, 10, FACE.eyeY - 1, 2);
-            drawLine(mm, 14, FACE.eyeY - 1, 18, FACE.eyeY, 2);
-          }, 0);
-          drawThick(m, (mm)=>{
-            drawLine(mm, 9, 18, 12, 17, 2);
-            drawLine(mm, 12, 17, 15, 18, 2);
-          }, 0);
-          break;
-
-        case 'focus':
-          addEyesFocus(m, t);
-          drawThick(m, (mm)=>{
-            // 减小弧度使其接近直线：增大半径并收窄角度范围
-            drawArc(mm, 12, -23, 40, Math.PI*0.48, Math.PI*0.52, 2);
-          }, 0);
-          break;
-
-        case 'think':
-          drawThick(m, (mm)=>{
-            drawCircle(mm, FACE.leftEyeX, FACE.eyeY, 1.6, 2);
-            drawCircle(mm, FACE.rightEyeX, FACE.eyeY, 1.6, 2);
-          }, 0);
-          setPx(m, FACE.leftEyeX - 1, FACE.eyeY + 1, 2);
-          setPx(m, FACE.rightEyeX - 1, FACE.eyeY - 1, 2);
-          drawThick(m, (mm)=>{
-            drawLine(mm, 5, 6, 10, 6, 2);
-            drawLine(mm, 14, 6, 19, 5, 2);
-          }, 0);
-          drawThick(m, (mm)=>{
-            drawLine(mm, 10, 17, 14, 16, 2);
-          }, 0);
-          break;
-
-        case 'confirm':
-          drawThick(m, (mm)=>{
-            drawLine(mm, FACE.leftEyeX - 2, FACE.eyeY, FACE.leftEyeX + 2, FACE.eyeY, 2);
-            if(!blinkClosed){ drawCircle(mm, FACE.rightEyeX, FACE.eyeY, 1.6, 2); }
-          }, 0);
-          if(!blinkClosed){ setPx(m, FACE.rightEyeX, FACE.eyeY, 2); }
-          addMouthSmile(m);
-          break;
-
-        case 'confuse':
-          addBrowsConfused(m, t);
-          drawThick(m, (mm)=>{
-            drawCircle(mm, FACE.leftEyeX, FACE.eyeY, blinkClosed?1.2:1.6, 2);
-            drawCircle(mm, FACE.rightEyeX, FACE.eyeY, 1.6, 2);
-          }, 0);
-          setPx(m, FACE.leftEyeX, FACE.eyeY, 2);
-          setPx(m, FACE.rightEyeX, FACE.eyeY, 2);
-          drawThick(m, (mm)=>{
-            drawLine(mm, 9, 18, 15, 16, 2);
-          }, 0);
-          break;
-
-        case 'wink':
-          drawThick(m, (mm)=>{
-            drawCircle(mm, FACE.leftEyeX, FACE.eyeY, 1.6, 2);
-            drawLine(mm, FACE.rightEyeX - 2, FACE.eyeY, FACE.rightEyeX + 2, FACE.eyeY, 2);
-          }, 0);
-          setPx(m, FACE.leftEyeX, FACE.eyeY, 2);
-          drawThick(m, (mm)=>{
-            drawArc(mm, 11, 16.8, 5.1, Math.PI*0.10, Math.PI*0.56, 2);
-          }, 0);
-          break;
-
-        case 'sleepy':
-          addEyesLine(m, FACE.eyeY, FACE.eyeY, 0, 2);
-          drawThick(m, (mm)=>{
-            drawLine(mm, FACE.leftEyeX - 2, FACE.eyeY + 1, FACE.leftEyeX + 2, FACE.eyeY + 2, 1);
-            drawLine(mm, FACE.rightEyeX - 2, FACE.eyeY + 2, FACE.rightEyeX + 2, FACE.eyeY + 1, 1);
-          }, 0);
-          drawThick(m, (mm)=>{
-            drawArc(mm, 12, 18, 3.0, Math.PI*1.10, Math.PI*1.90, 2);
-          }, 0);
-          break;
-
-        case 'party':
-          addEyesRound(m, 1);
-          drawThick(m, (mm)=>{
-            drawArc(mm, 12, 15.7, 6.0, Math.PI*0.15, Math.PI*0.85, 2);
-          }, 0);
-          break;
-
-        default:
-          addEyesRound(m, 0.9);
-          addMouthSmile(m);
-      }
-
-      return centerPatternVertically(m);
-    }
-
-    // --------- Emotion analysis (rule-based, CN/EN) ---------
-    const RULES = {
-      happy: {
-        w: 1,
-        kws: [
-          '开心','高兴','快乐','幸福','太棒了','好棒','赞','喜欢','爱了','感动','谢谢','感谢','nice','great','awesome','amazing','love','happy','glad','yay','wonderful','fantastic',
-          '🎉','🥳','lol','哈哈','哈哈哈','笑死','笑哭','爽'
-        ],
-        re: [ /\bcongrats?\b/i, /\bwell\s*done\b/i, /\bthank(s|you)\b/i ]
-      },
-      sad: {
-        w: 1,
-        kws: [
-          '难过','伤心','沮丧','失落','心碎','哭','流泪','遗憾','抱歉','对不起','同情','可怜','sad','down','depressed','upset','sorry','regret','miss','lonely'
-        ],
-        re: [ /\bmy\s*bad\b/i, /\bfeel\s*bad\b/i ]
-      },
-      angry: {
-        w: 1,
-        kws: [
-          '生气','愤怒','火大','气死','烦死','讨厌','警告','别再','滚','离谱','恶心你','angry','mad','furious','annoyed','hate','wtf','damn','shut up'
-        ],
-        re: [ /!{2,}/, /\bseriously\b/i ]
-      },
-      fear: {
-        w: 1,
-        kws: [
-          '害怕','恐惧','担心','焦虑','紧张','慌','吓死','惊讶','震惊','不敢','怎么办','scared','afraid','fear','anxious','nervous','worried','panic','shocked','surprised'
-        ],
-        re: [ /\bomg\b/i, /\bwhat\s*happened\b/i ]
-      },
-      disgust: {
-        w: 1,
-        kws: [
-          '恶心','反感','厌恶','拒绝','不行','算了吧','别了','受不了','离我远点','gross','disgust','nasty','ew','nope','reject'
-        ],
-        re: [ /\bno\s*way\b/i ]
-      },
-      focus: {
-        w: 1,
-        kws: [
-          '我在听','继续说','请讲','我明白你说的','嗯嗯','好的你说','listen','listening','go on','i\'m listening','tell me more','I see'
-        ],
-        re: [ /\bcarry\s*on\b/i ]
-      },
-      think: {
-        w: 1,
-        kws: [
-          '让我想想','思考','分析一下','处理中','我需要时间','稍等','我在处理','推理','可能','也许','maybe','let me think','thinking','processing','give me a moment','hold on','consider'
-        ],
-        re: [ /\bto\s*be\s*honest\b/i ]
-      },
-      confirm: {
-        w: 1,
-        kws: [
-          '好的','明白','收到','确认','完成','搞定','可以','没问题','已解决','done','ok','okay','sure','confirmed','completed','resolved','got it','roger'
-        ],
-        re: [ /\blooks\s*good\b/i ]
-      },
-      confuse: {
-        w: 1,
-        kws: [
-          '不懂','没理解','什么意思','为什么','怎么回事','疑问','困惑','看不懂','??','???','confused','not sure','i don\'t understand','what do you mean','huh','why'
-        ],
-        re: [ /\?{2,}/ ]
-      },
-      wink: {
-        w: 1,
-        kws: [
-          '开个玩笑','逗你','你懂的','嘿嘿','调皮','wink','just kidding','jk',';)','；）','🤫'
-        ],
-        re: [ /;\)/ ]
-      },
-      sleepy: {
-        w: 1,
-        kws: [
-          '困了','好困','想睡','疲惫','累','低电量','没电','顶不住','zZ','zzz','sleepy','tired','exhausted','need sleep','low battery','drained'
-        ],
-        re: [ /\bzzz+\b/i ]
-      },
-      party: {
-        w: 1,
-        kws: [
-          '庆祝','太好了','激动','兴奋','起飞','冲','赢了','突破','release','上线了','success','party','celebrate','excited','let\'s go','we did it','victory'
-        ],
-        re: [ /\bship(ped)?\b/i, /\blaunch(ed)?\b/i ]
-      }
-    };
-
-    const EXAMPLES = [
-      '太棒了！我们终于搞定了，今晚必须庆祝一下！',
-      '我有点难过……感觉自己做得不够好。',
-      '别再这样了！你这是在浪费我的时间。',
-      'I feel anxious and scared about what will happen next...',
-      '这也太恶心了吧，完全不能接受。',
-      '你继续说，我在认真听。',
-      '让我想想，可能需要先拆解一下问题。',
-      '收到，已确认并处理完成 ✅',
-      '我不太理解你的意思，能再解释一下吗？？',
-      '嘿嘿，开个玩笑啦 ;) ',
-      '好困，低电量了…我需要睡一会儿。',
-      'We did it! Launch successful! 🎉'
-    ];
-
-    function normText(s){
-      return (s||'')
-        .replace(/[\u200B-\u200D\uFEFF]/g,'')
-        .replace(/[\r\t]+/g,' ')
-        .trim();
-    }
-
-    function scoreText(text){
-      const t = normText(text);
-      const low = t.toLowerCase();
-      const scores = {};
-      for(const key of Object.keys(RULES)) scores[key]=0;
-
-      // punctuation signals
-      const exclaim = (t.match(/!/g)||[]).length + (t.match(/！/g)||[]).length;
-      const ques = (t.match(/\?/g)||[]).length + (t.match(/？/g)||[]).length;
-      const ellipsis = (t.match(/…/g)||[]).length + (t.match(/\.\.\./g)||[]).length;
-
-      if(exclaim>=2){ scores.party += 1.2; scores.angry += 0.6; }
-      if(ques>=2){ scores.confuse += 1.2; }
-      if(ellipsis>=1){ scores.sad += 0.5; scores.think += 0.35; }
-
-      for(const [id, rule] of Object.entries(RULES)){
-        for(const kw of rule.kws){
-          if(!kw) continue;
-          // allow exact emoji / ascii patterns too
-          if(kw.includes('\\')){
-            try{
-              const r = new RegExp(kw,'i');
-              if(r.test(low)) scores[id] += 1.0*rule.w;
-            }catch(e){}
-            continue;
-          }
-          const needle = kw.toLowerCase();
-          if(low.includes(needle) || t.includes(kw)){
-            // slightly upweight multi-char keywords
-            const boost = Math.min(1.8, 0.7 + needle.length*0.08);
-            scores[id] += boost*rule.w;
-          }
-        }
-        for(const r of rule.re||[]){
-          if(r.test(t) || r.test(low)) scores[id] += 1.25*rule.w;
-        }
-      }
-
-      // light semantic tie-breakers
-      if(/(谢谢|感谢|thank)/i.test(t)) scores.happy += 0.8;
-      if(/(对不起|抱歉|sorry)/i.test(t)) scores.sad += 0.6;
-      if(/(不行|拒绝|nope|reject)/i.test(t)) scores.disgust += 0.6;
-      if(/(我在听|listen|listening)/i.test(t)) scores.focus += 0.7;
-
-      // normalize with slight preference to interaction states when short & neutral
-      const len = t.length;
-      if(len>0 && len<16){
-        scores.focus += 0.15;
-        scores.think += 0.15;
-      }
-
-      return {scores, meta:{exclaim, ques, ellipsis}};
-    }
-
-    function pickEmotion(text){
-      const {scores} = scoreText(text);
-      let bestId = 'happy';
-      let best = -Infinity;
-      for(const [id,val] of Object.entries(scores)){
-        if(val>best){ best=val; bestId=id; }
-      }
-      // if everything is zero, default to focus (neutral listening)
-      if(best<=0.01) bestId = 'focus';
-      return {bestId, scores};
-    }
-
-    // --------- Renderer ---------
-    let currentEmotionId = 'focus';
-
-    function setEmotion(id){
-      if(!EMOTION_BY_ID[id]) id='focus';
-      currentEmotionId = id;
-
-      const e = EMOTION_BY_ID[id];
-      emotionLabelEl.innerHTML = `${e.emoji} 当前情绪：<span style="color:rgba(255,255,255,.86)">${e.label}</span> <span class="tiny">· ${e.group}</span>`;
-
-      // micro feedback
-      if(id==='angry' || id==='fear'){
-        screenWrap.classList.remove('shake');
-        void screenWrap.offsetWidth;
-        screenWrap.classList.add('shake');
-      }
-    }
-
-    function drawLED(matrix, color, t){
-      const W = canvas.width;
-      const H = canvas.height;
-      ctx.clearRect(0,0,W,H);
-
-      // background
-      ctx.fillStyle = '#02030a';
-      ctx.fillRect(0,0,W,H);
-
-      const dim = Math.min(W, H);
-      const pad = Math.floor(dim*0.08);
-      const cell = (dim - pad*2)/SIZE;
-      const r = cell*0.45;
-      const offX = (W - dim) / 2;
-      const offY = (H - dim) / 2;
-      
-      // Removed global flicker and per-pixel shimmer as requested
-      const flicker = 1.0;
-
-      // off dots
-      for(let y=0;y<SIZE;y++){
-        for(let x=0;x<SIZE;x++){
-          const cx = offX + pad + (x+0.5)*cell;
-          const cy = offY + pad + (y+0.5)*cell;
-          ctx.beginPath();
-          ctx.fillStyle = 'rgba(255,255,255,0.05)';
-          ctx.arc(cx, cy, r, 0, Math.PI*2);
-          ctx.fill();
-        }
-      }
-
-      // on dots
-      for(let y=0;y<SIZE;y++){
-        for(let x=0;x<SIZE;x++){
-          const v = matrix[y][x];
-          if(v<=0.02) continue;
-          const cx = offX + pad + (x+0.5)*cell;
-          const cy = offY + pad + (y+0.5)*cell;
-
-          const intensity = clamp((v/2) * flicker, 0, 1);
-
-          const glowA = 0.10 + 0.55*intensity;
-          const coreA = 0.20 + 0.75*intensity;
-
-          // outer glow
-          ctx.save();
-          ctx.shadowBlur = r*3.4;
-          ctx.shadowColor = hexToRgba(color, 0.9);
-          ctx.fillStyle = hexToRgba(color, glowA);
-          ctx.beginPath();
-          ctx.arc(cx, cy, r*1.05, 0, Math.PI*2);
-          ctx.fill();
-          ctx.restore();
-
-          // inner core with radial gradient
-          const g = ctx.createRadialGradient(cx,cy, r*0.15, cx,cy, r*1.05);
-          g.addColorStop(0, hexToRgba('#ffffff', 0.95*coreA));
-          g.addColorStop(0.35, hexToRgba(color, 0.90*coreA));
-          g.addColorStop(1, hexToRgba(color, 0.05));
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r*1.05, 0, Math.PI*2);
-          ctx.fill();
-        }
-      }
-
-      // vignette
-      const vg = ctx.createRadialGradient(W*0.5,H*0.5, dim*0.20, W*0.5,H*0.5, dim*0.62);
-      vg.addColorStop(0, 'rgba(0,0,0,0)');
-      vg.addColorStop(1, 'rgba(0,0,0,0.55)');
-      ctx.fillStyle = vg;
-      ctx.fillRect(0,0,W,H);
-    }
+    // --------- Emotion runtime (方案一保留 + 方案二新增) ---------
+    const switchSchemeBtn = document.getElementById('switchSchemeBtn');
+    const schemeInfoEl = document.getElementById('schemeInfo');
+    const footerTextEl = document.getElementById('footerText');
+    const footerHintEl = document.getElementById('footerHint');
 
     function hexToRgba(hex, a){
-      const h = hex.replace('#','');
-      const r = parseInt(h.substring(0,2),16);
-      const g = parseInt(h.substring(2,4),16);
-      const b = parseInt(h.substring(4,6),16);
+      const h = hex.replace('#', '');
+      const r = parseInt(h.substring(0, 2), 16);
+      const g = parseInt(h.substring(2, 4), 16);
+      const b = parseInt(h.substring(4, 6), 16);
       return `rgba(${r},${g},${b},${a})`;
     }
 
-    function tick(t){
-      const eNow = EMOTION_BY_ID[currentEmotionId];
-      const mat = patternFor(currentEmotionId, t);
+    const emotionRuntime = window.createExpressionSchemeRuntime({
+      SIZE,
+      canvas,
+      ctx,
+      screenWrap,
+      emotionLabelEl,
+      textEl,
+      chipsEl,
+      schemeInfoEl,
+      footerTextEl,
+      footerHintEl,
+      makeMatrix,
+      clamp,
+      _setPx,
+      setPx,
+      drawLine,
+      drawCircle,
+      fillCircle,
+      drawArc,
+      drawThick,
+      centerPatternVertically,
+      hexToRgba
+    });
 
-      drawLED(mat, eNow.color, t);
-      requestAnimationFrame(tick);
+    function pickEmotion(text){
+      return emotionRuntime.pickEmotion(text);
     }
 
-    requestAnimationFrame(tick);
+    function setEmotion(id){
+      emotionRuntime.setEmotion(id);
+    }
 
-    // --------- UI interactions ---------
+    function drawLED(renderSpec, color, t){
+      emotionRuntime.drawLED(renderSpec, color, t);
+    }
+
     function analyze(){
-      const txt = textEl.value;
-      const {bestId} = pickEmotion(txt);
-      setEmotion(bestId);
+      emotionRuntime.analyze();
     }
 
     analyzeBtn.addEventListener('click', analyze);
     randomBtn.addEventListener('click', ()=>{
-      const s = EXAMPLES[Math.floor(Math.random()*EXAMPLES.length)];
-      textEl.value = s;
-      analyze();
+      emotionRuntime.randomExample();
+    });
+    switchSchemeBtn.addEventListener('click', ()=>{
+      emotionRuntime.promptAndApplyScheme();
     });
 
     textEl.addEventListener('keydown', (e)=>{
-      if(e.key==='Enter' && !e.shiftKey){
+      if(e.key === 'Enter' && !e.shiftKey){
         e.preventDefault();
         analyze();
       }
     });
 
-    // build chips
-    const chipData = [
-      {t:'太棒了！我们上线成功了！🎉', id:'party'},
-      {t:'我有点难过…这次没做好。', id:'sad'},
-      {t:'别再这样了！！', id:'angry'},
-      {t:'I\'m scared… what if it fails?', id:'fear'},
-      {t:'这太恶心了，完全不能接受。', id:'disgust'},
-      {t:'你继续说，我在听。', id:'focus'},
-      {t:'让我想想，可能需要一步步分析。', id:'think'},
-      {t:'收到，已确认完成 ✅', id:'confirm'},
-      {t:'我不太理解你的意思？？', id:'confuse'},
-      {t:'嘿嘿，just kidding ;) ', id:'wink'},
-      {t:'好困…低电量了。', id:'sleepy'},
-      {t:'I\'m so happy, thanks!', id:'happy'},
-    ];
+    function tick(t){
+      emotionRuntime.tick(t);
+      requestAnimationFrame(tick);
+    }
 
-    chipData.forEach(c=>{
-      const el = document.createElement('div');
-      el.className = 'chip';
-      el.textContent = c.t;
-      el.title = '点击填入并分析';
-      el.addEventListener('click', ()=>{
-        textEl.value = c.t;
-        setEmotion(c.id);
-      });
-      chipsEl.appendChild(el);
-    });
-
-    // initial state
-    setEmotion('focus');
+    requestAnimationFrame(tick);
+    emotionRuntime.init();
 
     // =========================================================
     // ============ 豆包端到端实时语音大模型 接入 =================
