@@ -297,13 +297,13 @@
 
     .screenWrap{
       position:relative;
+      width: 100%;
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,.14);
       background: radial-gradient(900px 500px at 35% 20%, rgba(24,247,255,.10), transparent 60%), rgba(0,0,0,.45);
       box-shadow: inset 0 0 0 1px rgba(0,0,0,.5), 0 18px 70px rgba(0,0,0,.55);
       overflow:hidden;
       aspect-ratio: 16 / 9;
-      min-height: 520px;
     }
 
     canvas{
@@ -759,6 +759,14 @@
     const randomBtn = document.getElementById('randomBtn');
     const textEl = document.getElementById('text');
     const chipsEl = document.getElementById('chips');
+
+    function resize(){
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+    }
+    window.addEventListener('resize', resize);
+    resize();
 
     document.getElementById('gridInfo').textContent = `${SIZE}×${SIZE}`;
 
