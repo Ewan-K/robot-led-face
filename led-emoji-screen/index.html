@@ -996,12 +996,12 @@
 
     function addEyesFearSurprised(m){
       // Reference-style big, solid LED eyes.
-      fillCircle(m, FACE.leftEyeX, FACE.eyeY + 0.6, 3.6, 2);
-      fillCircle(m, FACE.rightEyeX, FACE.eyeY + 0.6, 3.6, 2);
+      fillCircle(m, FACE.leftEyeX, FACE.eyeY + 0.6, 2.6, 2);
+      fillCircle(m, FACE.rightEyeX, FACE.eyeY + 0.6, 2.6, 2);
       // A small lower taper makes the filled eyes feel closer to the pixel reference.
       drawThick(m, (mm)=>{
-        drawLine(mm, FACE.leftEyeX - 1.3, FACE.eyeY + 4.0, FACE.leftEyeX, FACE.eyeY + 4.8, 2);
-        drawLine(mm, FACE.rightEyeX, FACE.eyeY + 4.8, FACE.rightEyeX + 1.3, FACE.eyeY + 4.0, 2);
+        drawLine(mm, FACE.leftEyeX - 1.3, FACE.eyeY + 3.0, FACE.leftEyeX, FACE.eyeY + 3.8, 2);
+        drawLine(mm, FACE.rightEyeX, FACE.eyeY + 3.8, FACE.rightEyeX + 1.3, FACE.eyeY + 3.0, 2);
       }, 0);
     }
 
