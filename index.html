@@ -967,8 +967,9 @@
     }
 
     function addEyesFocus(m, t){
-      const dx = Math.round(Math.sin(t*0.0012)*1);
-      const dy = Math.round(Math.cos(t*0.0010)*1);
+      const pts = [[0, -1], [0, 0], [1, 0]]; // 上方 -> 中间 -> 右方
+      const idx = Math.floor(t * 0.001) % pts.length;
+      const [dx, dy] = pts[idx];
       drawThick(m, (mm)=>{
         drawCircle(mm, FACE.leftEyeX, FACE.eyeY, 1.8, 2);
         drawCircle(mm, FACE.rightEyeX, FACE.eyeY, 1.8, 2);
@@ -1042,8 +1043,8 @@
     function addBrowsFearSurprised(m){
       // Short arcs above the outer side of each eye, lifting upward like the reference.
       drawThick(m, (mm)=>{
-        drawArc(mm, FACE.leftEyeX - 2.3, FACE.eyeY - 4.8, 3.0, Math.PI*0.13, Math.PI*0.58, 2);
-        drawArc(mm, FACE.rightEyeX + 2.3, FACE.eyeY - 4.8, 3.0, Math.PI*0.42, Math.PI*0.87, 2);
+        drawArc(mm, FACE.leftEyeX - 2.3, FACE.eyeY - 6.05, 3.0, Math.PI*0.13, Math.PI*0.58, 2);
+        drawArc(mm, FACE.rightEyeX + 2.3, FACE.eyeY - 6.05, 3.0, Math.PI*0.42, Math.PI*0.87, 2);
       }, 0);
     }
 
