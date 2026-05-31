@@ -553,10 +553,6 @@
       function browArcDownSingle(m, cx, y, radius, thickness){
         arcStroke(m, cx, y, radius || 1.8, Math.PI * 0.14, Math.PI * 0.86, (thickness === null || thickness === undefined) ? 0.76 : thickness);
       }
-      function doubleShortBrowsLeft(m){
-        browLineSingle(m, FACE.leftEyeX - 0.5, FACE.browY - 0.55, 2.9, -0.04, 0.68);
-        browLineSingle(m, FACE.leftEyeX - 0.35, FACE.browY + 0.95, 3.1, 0.12, 0.68);
-      }
       function joyfulBrows(m){
         browArcUpSingle(m, FACE.leftEyeX, FACE.browY, 1.75, 0.74);
         browArcUpSingle(m, FACE.rightEyeX, FACE.browY, 1.75, 0.74);
@@ -600,13 +596,10 @@
         browArcDownSingle(m, FACE.leftEyeX, FACE.browY + 0.35, 1.45, 0.7);
         browArcDownSingle(m, FACE.rightEyeX, FACE.browY + 0.35, 1.45, 0.7);
       }
-      function flirtingBrows(m){
-        doubleShortBrowsLeft(m);
-        browArcUpSingle(m, FACE.rightEyeX, FACE.browY - 0.15, 1.55, 0.72);
-      }
-      function flirtingEyes(m){
-        eyeArcUp(m, FACE.leftEyeX, FACE.eyeY + 0.15, 2.15, 0.08);
-        eyeArcUp(m, FACE.rightEyeX, FACE.eyeY + 0.1, 1.95, 0.02);
+      function flirtingMarks(m){
+        browLineSingle(m, FACE.leftEyeX - 0.55, FACE.eyeY - 0.95, 2.95, 0.04, 0.68);
+        browLineSingle(m, FACE.leftEyeX - 0.35, FACE.eyeY + 0.7, 3.05, 0.1, 0.68);
+        eyeArcUp(m, FACE.rightEyeX + 0.1, FACE.eyeY - 0.55, 2.0, 0);
       }
       function joyfulEyes(m, sway){
         eyeArcUp(m, FACE.leftEyeX, FACE.eyeY + sway, 2.1, 0);
@@ -669,8 +662,7 @@
 
         switch(emotionId){
           case 'flirting':
-            flirtingBrows(base);
-            flirtingEyes(base);
+            flirtingMarks(base);
             break;
           case 'joyful':
             joyfulBrows(base);
