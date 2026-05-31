@@ -312,40 +312,6 @@
       display:block;
     }
 
-    /* scanlines + glow glass */
-    .screenWrap:before{
-      content:"";
-      position:absolute;
-      inset:0;
-      pointer-events:none;
-      background:
-        repeating-linear-gradient(
-          to bottom,
-          rgba(255,255,255,.06) 0px,
-          rgba(255,255,255,.02) 1px,
-          rgba(0,0,0,0) 3px,
-          rgba(0,0,0,0) 6px
-        );
-      opacity:.22;
-      mix-blend-mode:overlay;
-    }
-
-    .screenWrap:after{
-      content:"";
-      position:absolute;
-      inset:-40% 0 0 0;
-      pointer-events:none;
-      background: linear-gradient(to bottom, transparent, rgba(24,247,255,.11), transparent);
-      transform: translateY(-60%);
-      animation: sweep 3.2s linear infinite;
-      opacity:.55;
-      mix-blend-mode:screen;
-    }
-
-    @keyframes sweep{
-      0%{transform: translateY(-60%)}
-      100%{transform: translateY(160%)}
-    }
 
     .footer{
       margin-top:16px;
@@ -655,7 +621,7 @@
     <header>
       <div class="brand">
         <div class="title">机器人 LED 点阵表情屏</div>
-        <div class="subtitle">输入一段 AI 生成的文字，前端用关键词/语义规则做情绪匹配，并用拟真 LED 点阵在下方显示对应“脸”。支持中英文常见表达，含扫描线、闪烁与过渡动画。</div>
+        <div class="subtitle">输入一段 AI 生成的文字，前端用关键词/语义规则做情绪匹配，并用拟真 LED 点阵在下方显示对应“脸”。支持中英文常见表达，含闪烁与过渡动画。</div>
       </div>
       <div class="badge"><span class="dot"></span><span>Realtime voice · Local memory backend</span></div>
     </header>
@@ -666,7 +632,6 @@
           <div class="emotion" id="emotionLabel">🙂 当前情绪：<span style="color:var(--muted); font-weight:600">等待分析</span></div>
           <div class="legend">
             <div class="pill"><span class="mini"></span><span>像素发光</span></div>
-            <div class="pill"><span class="mini" style="background:var(--neon-lime); box-shadow:0 0 16px rgba(182,255,74,.35)"></span><span>扫描线</span></div>
             <div class="pill"><span class="mini" style="background:var(--warn); box-shadow:0 0 16px rgba(255,176,46,.35)"></span><span>轻微闪烁</span></div>
           </div>
         </div>
