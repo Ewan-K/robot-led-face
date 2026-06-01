@@ -620,8 +620,8 @@
             drawCircleShape(scene, 16.0, 12.2, 1.85, 0.92);
             break;
           case 'sad':
-            drawQuadraticShape(scene, 5.8, 6.3, 7.3, 7.0, 9.1, 7.5, 0.8);
-            drawQuadraticShape(scene, 14.9, 7.5, 16.7, 7.0, 18.2, 6.3, 0.8);
+            drawQuadraticShape(scene, 5.8, 7.5, 7.3, 7.0, 9.1, 6.3, 0.8);
+            drawQuadraticShape(scene, 14.9, 6.3, 16.7, 7.0, 18.2, 7.5, 0.8);
             drawArcShape(scene, 8.0, 11.4, 1.95, 0, Math.PI, 0.86);
             drawArcShape(scene, 16.0, 11.4, 1.95, 0, Math.PI, 0.86);
             drawDropShape(scene, 4.9, 14.5, 0.72, '#66FFFF');
