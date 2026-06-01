@@ -655,12 +655,12 @@
             drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
             break;
           case 'sweating':
-            topArc(scene, 8.0, 6.95, 1.7, 0.8);
-            topArc(scene, 16.0, 6.95, 1.7, 0.8);
-            topArc(scene, 8.0, 12.0, 2.05, 0.88);
-            topArc(scene, 16.0, 12.0, 2.05, 0.88);
-            drawRotatedDrop(scene, 19.2, 10.8, 0.62, 165, '#66E6FF');
-            drawRotatedDrop(scene, 18.4, 14.15, 0.7, 128, '#66E6FF');
+            drawQuadraticShape(scene, 5.8, 7.4, 7.2, 5.9, 8.9, 6.35, 0.82);
+            drawQuadraticShape(scene, 15.1, 6.35, 16.8, 5.9, 18.2, 7.4, 0.82);
+            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.9);
+            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.9);
+            drawRotatedDrop(scene, 19.15, 10.95, 0.62, 138, '#66E6FF');
+            drawRotatedDrop(scene, 18.35, 14.2, 0.7, 128, '#66E6FF');
             break;
           case 'brooding':
             drawQuadraticShape(scene, 5.8, 6.7, 7.9, 6.0, 10.1, 6.45, 0.9);
@@ -673,8 +673,8 @@
           case 'pleased':
             drawQuadraticShape(scene, 5.9, 6.95, 7.9, 6.25, 10.0, 6.9, 0.8);
             drawQuadraticShape(scene, 14.0, 6.9, 16.1, 6.25, 18.1, 6.95, 0.8);
-            drawQuadraticShape(scene, 5.8, 12.45, 8.0, 9.75, 10.05, 12.1, 0.92);
-            drawQuadraticShape(scene, 13.95, 12.1, 16.0, 9.75, 18.2, 12.45, 0.92);
+            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.92);
+            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.92);
             break;
           case 'sorry':
             drawQuadraticShape(scene, 6.0, 7.7, 7.3, 7.35, 8.9, 6.55, 0.78);
