@@ -602,10 +602,10 @@
         clearSchemeTwo(scene);
         switch(emotionId){
           case 'flirting':
-            drawQuadraticShape(scene, 4.9, 7.0, 6.4, 7.55, 8.2, 7.2, 0.82);
-            drawQuadraticShape(scene, 5.0, 9.85, 6.7, 10.3, 8.35, 10.75, 0.82);
-            drawQuadraticShape(scene, 14.35, 6.95, 16.0, 6.15, 17.7, 7.0, 0.82);
-            drawBezierShape(scene, 13.95, 12.05, 14.1, 9.55, 17.5, 9.4, 17.25, 12.35, 0.82);
+            drawQuadraticShape(scene, 5.45, 7.0, 6.8, 7.45, 8.45, 7.2, 0.82);
+            drawQuadraticShape(scene, 5.55, 9.85, 7.05, 10.25, 8.6, 10.7, 0.82);
+            drawQuadraticShape(scene, 13.7, 6.95, 15.2, 6.2, 16.9, 7.0, 0.82);
+            drawBezierShape(scene, 13.5, 12.0, 13.7, 9.75, 16.8, 9.6, 16.6, 12.2, 0.82);
             break;
           case 'joyful':
             drawQuadraticShape(scene, 5.8, 7.4, 7.2, 5.9, 8.9, 6.35, 0.82);
@@ -659,8 +659,8 @@
             drawQuadraticShape(scene, 15.1, 6.35, 16.8, 5.9, 18.2, 7.4, 0.82);
             drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.9);
             drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.9);
-            drawRotatedDrop(scene, 19.15, 10.95, 0.62, 138, '#66E6FF');
-            drawRotatedDrop(scene, 18.35, 14.2, 0.7, 128, '#66E6FF');
+            drawRotatedDrop(scene, 19.05, 10.95, 0.62, -42, '#66E6FF');
+            drawRotatedDrop(scene, 18.25, 14.2, 0.7, -52, '#66E6FF');
             break;
           case 'brooding':
             drawQuadraticShape(scene, 5.8, 6.7, 7.9, 6.0, 10.1, 6.45, 0.9);
