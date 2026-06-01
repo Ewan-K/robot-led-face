@@ -677,8 +677,8 @@
             drawQuadraticShape(scene, 13.95, 12.1, 16.0, 9.75, 18.2, 12.45, 0.92);
             break;
           case 'sorry':
-            drawQuadraticShape(scene, 6.0, 6.55, 7.3, 7.35, 8.9, 7.7, 0.78);
-            drawQuadraticShape(scene, 15.1, 7.7, 16.7, 7.35, 18.0, 6.55, 0.78);
+            drawQuadraticShape(scene, 6.0, 7.7, 7.3, 7.35, 8.9, 6.55, 0.78);
+            drawQuadraticShape(scene, 15.1, 6.55, 16.7, 7.35, 18.0, 7.7, 0.78);
             drawCircleShape(scene, 8.0, 12.2, 1.58, 0.82);
             drawCircleShape(scene, 16.0, 12.2, 1.58, 0.82);
             break;
