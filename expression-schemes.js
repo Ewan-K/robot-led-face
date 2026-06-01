@@ -640,10 +640,10 @@
             topArc(scene, 7.55, 10.05, 0.62, 0.52);
             break;
           case 'bright':
-            topArc(scene, 8.0, 7.0, 1.82, 0.84);
-            topArc(scene, 16.0, 7.0, 1.82, 0.84);
-            topArc(scene, 8.0, 12.15, 2.08, 0.9);
-            topArc(scene, 16.0, 12.15, 2.08, 0.9);
+            drawQuadraticShape(scene, 5.8, 7.4, 7.2, 5.9, 8.9, 6.35, 0.82);
+            drawQuadraticShape(scene, 15.1, 6.35, 16.8, 5.9, 18.2, 7.4, 0.82);
+            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.9);
+            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.9);
             drawLineShape(scene, 9.3, 3.7, 8.5, 1.9, 0.58, '#73EAF9');
             drawLineShape(scene, 12.0, 3.35, 12.0, 1.15, 0.58, '#73EAF9');
             drawLineShape(scene, 14.7, 3.7, 15.5, 1.9, 0.58, '#73EAF9');
