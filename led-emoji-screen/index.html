@@ -733,7 +733,7 @@
         <div class="transcript" id="transcript" aria-live="polite"></div>
 
         <div class="voiceHint">
-          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>，页面会先连接本地代理 <code>wss://localhost:8765</code>，再由代理转发到云端服务；页面还会访问本地记忆后端 <code>http://127.0.0.1:8766</code> 做长期记忆检索与存储。<br/>
+          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>，页面会先连接本地代理 <code>wss://localhost:8765</code>，再由代理转发到云端服务；页面还会访问本地记忆后端 <code>http://127.0.0.1:8766</code> 做长期记忆检索与存储，并可将识别到的意图 dispatch 到本地桥接服务 <code>http://127.0.0.1:9989/intent</code>。<br/>
           <span class="tiny">提示：请先启动本地 Node.js WebSocket 代理和 Mem0 后端，再打开当前页面；浏览器需要授权麦克风权限；首次连接可能需要几秒。</span>
         </div>
       </section>
@@ -1193,6 +1193,17 @@
       SEARCH_TOP_K: 5
     };
 
+    const INTENT_CFG = {
+      ENABLED: true,
+      API_URL: 'http://127.0.0.1:9989/intent',
+      RULES: [
+        {
+          intent: '本地飞书',
+          patterns: ['本地飞书']
+        }
+      ]
+    };
+
     function setMemoryStatus(text, state='idle'){
       if(!memoryStatusEl) return;
       memoryStatusEl.textContent = text;
@@ -1245,6 +1256,28 @@
           saved_at: new Date().toISOString()
         }
       }, 60000);
+    }
+
+    function detectIntents(text=''){
+      if(!INTENT_CFG.ENABLED) return [];
+      const sourceText = String(text || '');
+      if(!sourceText.trim()) return [];
+      return INTENT_CFG.RULES
+        .filter(rule => Array.isArray(rule.patterns) && rule.patterns.some(pattern => sourceText.includes(pattern)))
+        .map(rule => rule.intent);
+    }
+
+    async function dispatchIntent(intent, sourceText, extraMeta={}){
+      if(!INTENT_CFG.ENABLED || !intent) return null;
+      return await postJSON(INTENT_CFG.API_URL, {
+        intent,
+        source_text: sourceText || '',
+        metadata: {
+          source: 'robot-led-face-web',
+          triggered_at: new Date().toISOString(),
+          ...extraMeta
+        }
+      }, 15000);
     }
 
     function buildSystemRole(memorySummary=''){
@@ -1616,6 +1649,7 @@
         this._currentBotMsgId = null;
         this._currentBotText = '';
         this._currentUserMsgId = null;
+        this._triggeredIntentKeys = new Set();
 
         this._closing = false;
       }
@@ -1809,9 +1843,30 @@
         this._currentBotText += chunk;
         const body = findOrCreateMsg('bot', replyId);
         body.textContent = this._currentBotText;
+        this._maybeDispatchIntents(replyId);
         transcriptEl.scrollTop = transcriptEl.scrollHeight;
       }
+      _maybeDispatchIntents(replyId){
+        const sourceText = this._currentBotText || '';
+        const intents = detectIntents(sourceText);
+        if(!intents.length) return;
+        intents.forEach((intent)=>{
+          const triggerKey = `${replyId}:${intent}`;
+          if(this._triggeredIntentKeys.has(triggerKey)) return;
+          this._triggeredIntentKeys.add(triggerKey);
+          appendMsg('sys', `🧠 识别到意图：${intent}，正在触发本地动作…`);
+          dispatchIntent(intent, sourceText, { reply_id: replyId })
+            .then(()=>{
+              appendMsg('sys', `✅ 本地动作已触发：${intent}`);
+            })
+            .catch((err)=>{
+              console.warn('intent dispatch failed', err);
+              appendMsg('sys', `⚠️ 本地意图触发失败：${intent}（${err && err.message ? err.message : err}）`);
+            });
+        });
+      }
       _commitBotEmotion(){
+        const replyId = this._currentBotMsgId || '';
         const txt = this._currentBotText || '';
         const userText = (this._lastFinalUserText || '').trim();
         if(txt.trim().length>0){
@@ -1841,6 +1896,11 @@
               setMemoryStatus('记忆后端不可用','error');
               setMemorySummary(`记忆同步失败：${err && err.message ? err.message : err}`);
             }
+          });
+        }
+        if(replyId){
+          Array.from(this._triggeredIntentKeys).forEach((key)=>{
+            if(key.startsWith(`${replyId}:`)) this._triggeredIntentKeys.delete(key);
           });
         }
         this._currentBotMsgId = null;
