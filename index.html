@@ -30,6 +30,7 @@
     html,body{height:100%}
     body{
       margin:0;
+      position:relative;
       font-family:"Outfit", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
       color:var(--text);
       background:
@@ -46,6 +47,8 @@
     }
 
     .wrap{
+      position:relative;
+      z-index:1;
       max-width:1100px;
       margin:0 auto;
       padding:28px 18px 42px;
@@ -278,7 +281,11 @@
     }
 
     .screenWrap{
+      --emotion-glow:#18f7ff;
+      --emotion-glow-soft: rgba(24,247,255,.28);
+      --emotion-glow-edge: rgba(24,247,255,.65);
       position:relative;
+      isolation:isolate;
       width: 100%;
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,.14);
@@ -287,11 +294,56 @@
       overflow:hidden;
       aspect-ratio: 16 / 9;
     }
+    .screenWrap::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius:inherit;
+      pointer-events:none;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.04),
+        inset 0 0 28px var(--emotion-glow-soft),
+        0 0 0 1px var(--emotion-glow-edge),
+        0 0 28px var(--emotion-glow-soft),
+        0 0 72px rgba(0,0,0,.18);
+      opacity:.92;
+      animation: glowPulse 3.4s ease-in-out infinite;
+      z-index:1;
+    }
+    .screenWrap #screen{
+      position:relative;
+      z-index:2;
+      transform-origin:center center;
+      will-change:transform, opacity, filter;
+    }
+    .screenWrap.is-switching #screen{
+      animation: screenMorph .42s cubic-bezier(.22,.61,.36,1);
+    }
+
+    .bgFxCanvas{
+      position:fixed;
+      inset:0;
+      width:100vw;
+      height:100vh;
+      z-index:0;
+      pointer-events:none;
+      opacity:.55;
+    }
 
     canvas{
       width:100%;
       height:100%;
       display:block;
+    }
+
+    @keyframes glowPulse{
+      0%,100%{opacity:.78; transform:scale(1)}
+      50%{opacity:1; transform:scale(1.01)}
+    }
+    @keyframes screenMorph{
+      0%{opacity:.34; transform:scale(.92); filter:blur(6px)}
+      62%{opacity:.98; transform:scale(1.028); filter:blur(0)}
+      100%{opacity:1; transform:scale(1); filter:blur(0)}
     }
 
 
@@ -590,6 +642,7 @@
       </style>
 </head>
 <body>
+  <canvas id="bgFx" class="bgFxCanvas" aria-hidden="true"></canvas>
   <div class="wrap">
     <header>
       <div class="brand">
@@ -691,20 +744,101 @@
     const SCALE = SIZE / 24;
     const canvas = document.getElementById('screen');
     const ctx = canvas.getContext('2d');
+    const bgFxCanvas = document.getElementById('bgFx');
+    const bgFxCtx = bgFxCanvas.getContext('2d');
     const screenWrap = document.getElementById('screenWrap');
     const emotionLabelEl = document.getElementById('emotionLabel');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const randomBtn = document.getElementById('randomBtn');
     const textEl = document.getElementById('text');
     const chipsEl = document.getElementById('chips');
+    let bgParticles = [];
+
+    function createParticle(width, height){
+      const palette = ['24,247,255', '255,59,245', '182,255,74'];
+      const drift = 0.12 + Math.random() * 0.34;
+      return {
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: drift + Math.random() * 0.18,
+        vy: (Math.random() - 0.5) * 0.16,
+        size: 0.8 + Math.random() * 2.1,
+        alpha: 0.08 + Math.random() * 0.22,
+        wave: Math.random() * Math.PI * 2,
+        color: palette[Math.floor(Math.random() * palette.length)]
+      };
+    }
+
+    function seedParticles(){
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const count = Math.max(36, Math.floor((width * height) / 32000));
+      bgParticles = Array.from({ length: count }, ()=>createParticle(width, height));
+    }
 
     function resize(){
       const dpr = window.devicePixelRatio || 1;
       canvas.width = canvas.clientWidth * dpr;
       canvas.height = canvas.clientHeight * dpr;
+
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      bgFxCanvas.width = Math.round(width * dpr);
+      bgFxCanvas.height = Math.round(height * dpr);
+      bgFxCtx.setTransform(1, 0, 0, 1, 0, 0);
+      bgFxCtx.scale(dpr, dpr);
+      seedParticles();
     }
     window.addEventListener('resize', resize);
     resize();
+
+    function drawBackgroundFx(t){
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      bgFxCtx.clearRect(0, 0, width, height);
+
+      const wash = bgFxCtx.createRadialGradient(width * 0.2, height * 0.18, 0, width * 0.2, height * 0.18, width * 0.55);
+      wash.addColorStop(0, 'rgba(24,247,255,.10)');
+      wash.addColorStop(1, 'rgba(24,247,255,0)');
+      bgFxCtx.fillStyle = wash;
+      bgFxCtx.fillRect(0, 0, width, height);
+
+      const wash2 = bgFxCtx.createRadialGradient(width * 0.82, height * 0.16, 0, width * 0.82, height * 0.16, width * 0.42);
+      wash2.addColorStop(0, 'rgba(255,59,245,.08)');
+      wash2.addColorStop(1, 'rgba(255,59,245,0)');
+      bgFxCtx.fillStyle = wash2;
+      bgFxCtx.fillRect(0, 0, width, height);
+
+      bgParticles.forEach((particle)=>{
+        particle.x += particle.vx;
+        particle.y += particle.vy + Math.sin(t * 0.00055 + particle.wave) * 0.08;
+        if(particle.x > width + 30){ particle.x = -24; particle.y = Math.random() * height; }
+        if(particle.y < -20) particle.y = height + 10;
+        if(particle.y > height + 20) particle.y = -10;
+
+        const twinkle = 0.45 + 0.55 * Math.sin(t * 0.0014 + particle.wave);
+        const trailX = particle.x - particle.vx * 16;
+        const trailY = particle.y - particle.vy * 22;
+
+        bgFxCtx.save();
+        bgFxCtx.strokeStyle = `rgba(${particle.color},${particle.alpha * 0.42 * twinkle})`;
+        bgFxCtx.lineWidth = Math.max(0.8, particle.size * 0.7);
+        bgFxCtx.beginPath();
+        bgFxCtx.moveTo(trailX, trailY);
+        bgFxCtx.lineTo(particle.x, particle.y);
+        bgFxCtx.stroke();
+        bgFxCtx.restore();
+
+        bgFxCtx.save();
+        bgFxCtx.fillStyle = `rgba(${particle.color},${particle.alpha * twinkle})`;
+        bgFxCtx.shadowBlur = particle.size * 8;
+        bgFxCtx.shadowColor = `rgba(${particle.color},${particle.alpha * 0.95})`;
+        bgFxCtx.beginPath();
+        bgFxCtx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        bgFxCtx.fill();
+        bgFxCtx.restore();
+      });
+    }
 
     document.getElementById('gridInfo').textContent = `${SIZE}×${SIZE}`;
 
@@ -922,6 +1056,7 @@
     });
 
     function tick(t){
+      drawBackgroundFx(t);
       emotionRuntime.tick(t);
       requestAnimationFrame(tick);
     }

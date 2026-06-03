@@ -770,6 +770,56 @@
 
     let activeScheme = SCHEMES.scheme2;
     let currentEmotionId = activeScheme.defaultEmotionId;
+    let hasAnimatedEmotion = false;
+    let switchAnimTimer = null;
+    const GLOW_BY_ID = {
+      happy: '#ffd86b',
+      joyful: '#ffd86b',
+      party: '#b6ff4a',
+      bright: '#ffd86b',
+      confirm: '#6bffb6',
+      sad: '#67c8ff',
+      sorry: '#9fc7ff',
+      sweating: '#66e6ff',
+      angry: '#ff5f7f',
+      fear: '#8ea4ff',
+      anxious: '#8ea4ff',
+      listening: '#32e7ff',
+      focus: '#32e7ff',
+      sceptical: '#d4b4ff',
+      brooding: '#b89fff',
+      think: '#ffb56a',
+      pleased: '#ffe38a',
+      flirting: '#ff8fd5',
+      disgust: '#8eff88',
+      sleepy: '#8aa0ff',
+      confuse: '#ff8df2',
+      wink: '#ff77de'
+    };
+
+    function resolveGlowColor(id, emotion){
+      return GLOW_BY_ID[id] || (emotion && emotion.color) || '#18f7ff';
+    }
+
+    function applyGlowColor(color){
+      screenWrap.style.setProperty('--emotion-glow', color);
+      screenWrap.style.setProperty('--emotion-glow-soft', hexToRgba(color, 0.24));
+      screenWrap.style.setProperty('--emotion-glow-edge', hexToRgba(color, 0.68));
+    }
+
+    function triggerScreenTransition(){
+      if(!hasAnimatedEmotion){
+        hasAnimatedEmotion = true;
+        return;
+      }
+      screenWrap.classList.remove('is-switching');
+      void screenWrap.offsetWidth;
+      screenWrap.classList.add('is-switching');
+      if(switchAnimTimer) window.clearTimeout(switchAnimTimer);
+      switchAnimTimer = window.setTimeout(()=>{
+        screenWrap.classList.remove('is-switching');
+      }, 440);
+    }
 
     function updateSchemeUi(){
       if(schemeInfoEl) schemeInfoEl.textContent = activeScheme.title;
@@ -809,6 +859,8 @@
       currentEmotionId = id;
       const emotion = activeScheme.emotionById[id];
       emotionLabelEl.innerHTML = `${emotion.emoji} 当前情绪：<span style="color:rgba(255,255,255,.86)">${emotion.label}</span> <span class="tiny">· ${activeScheme.title}</span>`;
+      applyGlowColor(resolveGlowColor(id, emotion));
+      triggerScreenTransition();
       if(id === 'angry' || id === 'fear' || id === 'anxious'){
         screenWrap.classList.remove('shake');
         void screenWrap.offsetWidth;
