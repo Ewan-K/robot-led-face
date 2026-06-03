@@ -803,8 +803,8 @@
 
     function applyGlowColor(color){
       screenWrap.style.setProperty('--emotion-glow', color);
-      screenWrap.style.setProperty('--emotion-glow-soft', hexToRgba(color, 0.42));
-      screenWrap.style.setProperty('--emotion-glow-edge', hexToRgba(color, 0.92));
+      screenWrap.style.setProperty('--emotion-glow-soft', hexToRgba(color, 0.32));
+      screenWrap.style.setProperty('--emotion-glow-edge', hexToRgba(color, 0.72));
     }
 
     function triggerScreenTransition(){
