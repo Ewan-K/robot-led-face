@@ -27,8 +27,9 @@
     }
 
     *{box-sizing:border-box}
-    html,body{height:100%}
+    html{min-height:100%}
     body{
+      min-height:100vh;
       margin:0;
       position:relative;
       font-family:"Outfit", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
@@ -345,10 +346,10 @@
     }
 
     .bgFxCanvas{
-      position:fixed;
+      position:absolute;
       inset:0;
-      width:100vw;
-      height:100vh;
+      width:100%;
+      height:100%;
       z-index:0;
       pointer-events:none;
       opacity:.72;
@@ -801,6 +802,17 @@
     const textEl = document.getElementById('text');
     const chipsEl = document.getElementById('chips');
     let bgParticles = [];
+    let bgFxWidth = 0;
+    let bgFxHeight = 0;
+
+    function getBackgroundFxSize(){
+      const doc = document.documentElement;
+      const bodyEl = document.body;
+      return {
+        width: Math.max(window.innerWidth, doc.clientWidth, doc.scrollWidth, bodyEl.scrollWidth),
+        height: Math.max(window.innerHeight, doc.clientHeight, doc.scrollHeight, bodyEl.scrollHeight)
+      };
+    }
 
     function createParticle(width, height){
       const palette = ['24,247,255', '255,59,245', '182,255,74', '116,212,255'];
@@ -822,9 +834,7 @@
       };
     }
 
-    function seedParticles(){
-      const width = window.innerWidth;
-      const height = window.innerHeight;
+    function seedParticles(width = bgFxWidth, height = bgFxHeight){
       const count = Math.max(68, Math.floor((width * height) / 17500));
       bgParticles = Array.from({ length: count }, ()=>createParticle(width, height));
     }
@@ -834,20 +844,28 @@
       canvas.width = canvas.clientWidth * dpr;
       canvas.height = canvas.clientHeight * dpr;
 
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      bgFxCanvas.width = Math.round(width * dpr);
-      bgFxCanvas.height = Math.round(height * dpr);
+      const size = getBackgroundFxSize();
+      bgFxWidth = size.width;
+      bgFxHeight = size.height;
+      bgFxCanvas.style.width = `${bgFxWidth}px`;
+      bgFxCanvas.style.height = `${bgFxHeight}px`;
+      bgFxCanvas.width = Math.round(bgFxWidth * dpr);
+      bgFxCanvas.height = Math.round(bgFxHeight * dpr);
       bgFxCtx.setTransform(1, 0, 0, 1, 0, 0);
       bgFxCtx.scale(dpr, dpr);
-      seedParticles();
+      seedParticles(bgFxWidth, bgFxHeight);
     }
     window.addEventListener('resize', resize);
+    window.addEventListener('load', resize);
     resize();
 
     function drawBackgroundFx(t){
-      const width = window.innerWidth;
-      const height = window.innerHeight;
+      const size = getBackgroundFxSize();
+      if(size.width !== bgFxWidth || size.height !== bgFxHeight){
+        resize();
+      }
+      const width = bgFxWidth;
+      const height = bgFxHeight;
       bgFxCtx.clearRect(0, 0, width, height);
 
       const wash = bgFxCtx.createRadialGradient(width * 0.18, height * 0.16, 0, width * 0.18, height * 0.16, width * 0.72);
