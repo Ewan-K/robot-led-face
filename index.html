@@ -789,26 +789,24 @@
 
     function createParticle(width, height){
       const palette = ['24,247,255', '255,59,245', '182,255,74', '116,212,255'];
-      const drift = 0.2 + Math.random() * 0.44;
-      const size = 1.1 + Math.random() * 2.6;
-      const alpha = 0.08 + Math.random() * 0.18;
+      const size = 1.45 + Math.random() * 3.6;
+      const alpha = 0.14 + Math.random() * 0.24;
       return {
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: drift,
-        vy: (Math.random() - 0.5) * 0.2,
         size,
         alpha,
-        blur: 8 + size * 6,
-        trail: 14 + Math.random() * 24,
-        bloom: 16 + Math.random() * 28,
-        wave: Math.random() * Math.PI * 2,
+        blur: 16 + size * 8,
+        ray: 18 + Math.random() * 34,
+        bloom: 26 + Math.random() * 34,
+        halo: size * (5.8 + Math.random() * 1.8),
+        tilt: Math.random() * Math.PI * 2,
         color: palette[Math.floor(Math.random() * palette.length)]
       };
     }
 
     function seedParticles(width = bgFxWidth, height = bgFxHeight){
-      const count = Math.max(68, Math.floor((width * height) / 17500));
+      const count = Math.max(96, Math.floor((width * height) / 12800));
       bgParticles = Array.from({ length: count }, ()=>createParticle(width, height));
     }
 
@@ -832,7 +830,7 @@
     window.addEventListener('load', resize);
     resize();
 
-    function drawBackgroundFx(t){
+    function drawBackgroundFx(){
       const size = getBackgroundFxSize();
       if(size.width !== bgFxWidth || size.height !== bgFxHeight){
         resize();
@@ -841,71 +839,62 @@
       const height = bgFxHeight;
       bgFxCtx.clearRect(0, 0, width, height);
 
-      const wash = bgFxCtx.createRadialGradient(width * 0.18, height * 0.16, 0, width * 0.18, height * 0.16, width * 0.72);
-      wash.addColorStop(0, 'rgba(24,247,255,.1)');
-      wash.addColorStop(0.45, 'rgba(24,247,255,.035)');
+      const wash = bgFxCtx.createRadialGradient(width * 0.18, height * 0.16, 0, width * 0.18, height * 0.16, width * 0.78);
+      wash.addColorStop(0, 'rgba(24,247,255,.14)');
+      wash.addColorStop(0.42, 'rgba(24,247,255,.05)');
       wash.addColorStop(1, 'rgba(24,247,255,0)');
       bgFxCtx.fillStyle = wash;
       bgFxCtx.fillRect(0, 0, width, height);
 
-      const wash2 = bgFxCtx.createRadialGradient(width * 0.84, height * 0.14, 0, width * 0.84, height * 0.14, width * 0.58);
-      wash2.addColorStop(0, 'rgba(255,59,245,.08)');
-      wash2.addColorStop(0.42, 'rgba(255,59,245,.028)');
+      const wash2 = bgFxCtx.createRadialGradient(width * 0.84, height * 0.14, 0, width * 0.84, height * 0.14, width * 0.62);
+      wash2.addColorStop(0, 'rgba(255,59,245,.11)');
+      wash2.addColorStop(0.4, 'rgba(255,59,245,.042)');
       wash2.addColorStop(1, 'rgba(255,59,245,0)');
       bgFxCtx.fillStyle = wash2;
       bgFxCtx.fillRect(0, 0, width, height);
 
-      const driftX = width * (0.38 + 0.04 * Math.sin(t * 0.00023));
-      const driftY = height * (0.34 + 0.03 * Math.cos(t * 0.00019));
-      const drift = bgFxCtx.createRadialGradient(driftX, driftY, 0, driftX, driftY, Math.max(width, height) * 0.52);
-      drift.addColorStop(0, 'rgba(24,247,255,.024)');
-      drift.addColorStop(0.42, 'rgba(24,247,255,.012)');
-      drift.addColorStop(0.68, 'rgba(255,59,245,.01)');
-      drift.addColorStop(1, 'rgba(255,59,245,0)');
-      bgFxCtx.fillStyle = drift;
+      const coreGlow = bgFxCtx.createRadialGradient(width * 0.46, height * 0.36, 0, width * 0.46, height * 0.36, Math.max(width, height) * 0.58);
+      coreGlow.addColorStop(0, 'rgba(24,247,255,.04)');
+      coreGlow.addColorStop(0.46, 'rgba(24,247,255,.018)');
+      coreGlow.addColorStop(0.7, 'rgba(255,59,245,.016)');
+      coreGlow.addColorStop(1, 'rgba(255,59,245,0)');
+      bgFxCtx.fillStyle = coreGlow;
       bgFxCtx.fillRect(0, 0, width, height);
 
       bgParticles.forEach((particle)=>{
-        particle.x += particle.vx;
-        particle.y += particle.vy + Math.sin(t * 0.001 + particle.wave) * 0.14;
-        if(particle.x > width + particle.trail + 60){ particle.x = -particle.trail; particle.y = Math.random() * height; }
-        if(particle.y < -40) particle.y = height + 20;
-        if(particle.y > height + 40) particle.y = -20;
-
-        const twinkle = 0.74 + 0.18 * Math.sin(t * 0.0018 + particle.wave);
-        const trailX = particle.x - particle.vx * particle.trail;
-        const trailY = particle.y - particle.vy * (particle.trail * 1.35);
-        const glowAlpha = particle.alpha * twinkle;
+        const rayX = particle.x - Math.cos(particle.tilt) * particle.ray;
+        const rayY = particle.y - Math.sin(particle.tilt) * particle.ray * 0.72;
+        const glowAlpha = particle.alpha;
 
         bgFxCtx.save();
         bgFxCtx.lineCap = 'round';
-        bgFxCtx.strokeStyle = `rgba(${particle.color},${glowAlpha * 0.5})`;
-        bgFxCtx.lineWidth = Math.max(0.85, particle.size * 0.72);
+        bgFxCtx.strokeStyle = `rgba(${particle.color},${glowAlpha * 0.62})`;
+        bgFxCtx.lineWidth = Math.max(1, particle.size * 0.88);
         bgFxCtx.shadowBlur = particle.blur;
-        bgFxCtx.shadowColor = `rgba(${particle.color},${glowAlpha * 0.48})`;
+        bgFxCtx.shadowColor = `rgba(${particle.color},${glowAlpha * 0.6})`;
         bgFxCtx.beginPath();
-        bgFxCtx.moveTo(trailX, trailY);
+        bgFxCtx.moveTo(rayX, rayY);
         bgFxCtx.lineTo(particle.x, particle.y);
         bgFxCtx.stroke();
         bgFxCtx.restore();
 
         bgFxCtx.save();
-        bgFxCtx.fillStyle = `rgba(${particle.color},${glowAlpha * 0.56})`;
+        bgFxCtx.fillStyle = `rgba(${particle.color},${glowAlpha * 0.82})`;
         bgFxCtx.shadowBlur = particle.bloom;
-        bgFxCtx.shadowColor = `rgba(${particle.color},${glowAlpha * 0.48})`;
+        bgFxCtx.shadowColor = `rgba(${particle.color},${glowAlpha * 0.66})`;
         bgFxCtx.beginPath();
-        bgFxCtx.arc(particle.x, particle.y, particle.size * 0.9, 0, Math.PI * 2);
+        bgFxCtx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
         bgFxCtx.fill();
         bgFxCtx.restore();
 
         bgFxCtx.save();
-        const halo = bgFxCtx.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, particle.size * 4.8);
-        halo.addColorStop(0, `rgba(${particle.color},${glowAlpha * 0.26})`);
-        halo.addColorStop(0.5, `rgba(${particle.color},${glowAlpha * 0.07})`);
+        const halo = bgFxCtx.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, particle.halo);
+        halo.addColorStop(0, `rgba(${particle.color},${glowAlpha * 0.36})`);
+        halo.addColorStop(0.5, `rgba(${particle.color},${glowAlpha * 0.12})`);
         halo.addColorStop(1, `rgba(${particle.color},0)`);
         bgFxCtx.fillStyle = halo;
         bgFxCtx.beginPath();
-        bgFxCtx.arc(particle.x, particle.y, particle.size * 4.8, 0, Math.PI * 2);
+        bgFxCtx.arc(particle.x, particle.y, particle.halo, 0, Math.PI * 2);
         bgFxCtx.fill();
         bgFxCtx.restore();
       });
