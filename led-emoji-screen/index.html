@@ -733,7 +733,7 @@
         <div class="transcript" id="transcript" aria-live="polite"></div>
 
         <div class="voiceHint">
-          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>，页面会先连接本地代理 <code>wss://localhost:8765</code>，再由代理转发到云端服务；页面还会访问本地记忆后端 <code>http://127.0.0.1:8766</code> 做长期记忆检索与存储，并可将识别到的意图 dispatch 到本地桥接服务 <code>http://127.0.0.1:9989/intent</code>。<br/>
+          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>，页面会先连接本地代理 <code>wss://localhost:8765</code>，再由代理转发到云端服务；页面还会访问本地记忆后端 <code>http://127.0.0.1:8766</code> 做长期记忆检索与存储，并在语音链路内直接接收服务端下发的 Function Calling 工具调用。<br/>
           <span class="tiny">提示：请先启动本地 Node.js WebSocket 代理和 Mem0 后端，再打开当前页面；浏览器需要授权麦克风权限；首次连接可能需要几秒。</span>
         </div>
       </section>
@@ -1147,6 +1147,7 @@
       FinishSession: 102,
       TaskRequest: 200,
       UpdateConfig: 201,
+      UpdateVoiceChat: 201,
       // 服务端事件
       ConnectionStarted: 50,
       ConnectionFailed: 51,
@@ -1193,13 +1194,26 @@
       SEARCH_TOP_K: 5
     };
 
-    const INTENT_CFG = {
+    const FUNCTION_CALL_CFG = {
       ENABLED: true,
-      API_URL: 'http://127.0.0.1:9989/intent',
-      RULES: [
+      TOOL_NAME: '本地飞书',
+      TOOLS: [
         {
-          intent: '本地飞书',
-          patterns: ['本地飞书']
+          type: 'function',
+          function: {
+            name: '本地飞书',
+            description: '当用户提到飞书相关操作时调用',
+            parameters: {
+              type: 'object',
+              properties: {
+                text: {
+                  type: 'string',
+                  description: '用户希望执行的飞书相关操作描述'
+                }
+              },
+              required: ['text']
+            }
+          }
         }
       ]
     };
@@ -1258,26 +1272,34 @@
       }, 60000);
     }
 
-    function detectIntents(text=''){
-      if(!INTENT_CFG.ENABLED) return [];
-      const sourceText = String(text || '');
-      if(!sourceText.trim()) return [];
-      return INTENT_CFG.RULES
-        .filter(rule => Array.isArray(rule.patterns) && rule.patterns.some(pattern => sourceText.includes(pattern)))
-        .map(rule => rule.intent);
+    function safeJsonParse(raw, fallback={}){
+      if(raw == null || raw === '') return fallback;
+      if(typeof raw === 'object') return raw;
+      try{
+        return JSON.parse(raw);
+      }catch(_err){
+        return fallback;
+      }
     }
 
-    async function dispatchIntent(intent, sourceText, extraMeta={}){
-      if(!INTENT_CFG.ENABLED || !intent) return null;
-      return await postJSON(INTENT_CFG.API_URL, {
-        intent,
-        source_text: sourceText || '',
-        metadata: {
-          source: 'robot-led-face-web',
-          triggered_at: new Date().toISOString(),
-          ...extraMeta
-        }
-      }, 15000);
+    function normalizeFunctionCallPayload(payloadObj={}){
+      if(!FUNCTION_CALL_CFG.ENABLED || !payloadObj || typeof payloadObj !== 'object') return null;
+      const rawType = payloadObj.type || payloadObj.event_type || payloadObj.message_type || '';
+      const isFunctionCall = rawType === 'function_call' || rawType === 'function_calling';
+      const functionInfo = payloadObj.function && typeof payloadObj.function === 'object' ? payloadObj.function : null;
+      const functionName = functionInfo?.name || payloadObj.function_name || payloadObj.function || payloadObj.name || '';
+      if(!isFunctionCall && functionName !== FUNCTION_CALL_CFG.TOOL_NAME) return null;
+      if(functionName !== FUNCTION_CALL_CFG.TOOL_NAME) return null;
+
+      const rawArgs = functionInfo?.arguments ?? payloadObj.arguments ?? payloadObj.args ?? payloadObj.parameters ?? '{}';
+      const parsedArgs = safeJsonParse(rawArgs, {});
+      const callId = payloadObj.tool_call_id || payloadObj.call_id || payloadObj.id || payloadObj.reply_id || uuid();
+      return {
+        id: String(callId),
+        name: functionName,
+        args: parsedArgs && typeof parsedArgs === 'object' ? parsedArgs : {},
+        raw: payloadObj
+      };
     }
 
     function buildSystemRole(memorySummary=''){
@@ -1649,7 +1671,7 @@
         this._currentBotMsgId = null;
         this._currentBotText = '';
         this._currentUserMsgId = null;
-        this._triggeredIntentKeys = new Set();
+        this._handledFunctionCallIds = new Set();
 
         this._closing = false;
       }
@@ -1775,6 +1797,11 @@
             this._finalizeUserText();
             break;
           case EVT.ChatResponse: {
+            const functionCall = normalizeFunctionCallPayload(payloadObj);
+            if(functionCall){
+              this._handleFunctionCall(functionCall);
+              break;
+            }
             const txt = payloadObj && payloadObj.content;
             if(txt){
               this._appendBotText(payloadObj.reply_id || 'r0', txt);
@@ -1843,30 +1870,33 @@
         this._currentBotText += chunk;
         const body = findOrCreateMsg('bot', replyId);
         body.textContent = this._currentBotText;
-        this._maybeDispatchIntents(replyId);
         transcriptEl.scrollTop = transcriptEl.scrollHeight;
       }
-      _maybeDispatchIntents(replyId){
-        const sourceText = this._currentBotText || '';
-        const intents = detectIntents(sourceText);
-        if(!intents.length) return;
-        intents.forEach((intent)=>{
-          const triggerKey = `${replyId}:${intent}`;
-          if(this._triggeredIntentKeys.has(triggerKey)) return;
-          this._triggeredIntentKeys.add(triggerKey);
-          appendMsg('sys', `🧠 识别到意图：${intent}，正在触发本地动作…`);
-          dispatchIntent(intent, sourceText, { reply_id: replyId })
-            .then(()=>{
-              appendMsg('sys', `✅ 本地动作已触发：${intent}`);
-            })
-            .catch((err)=>{
-              console.warn('intent dispatch failed', err);
-              appendMsg('sys', `⚠️ 本地意图触发失败：${intent}（${err && err.message ? err.message : err}）`);
-            });
-        });
+      async _handleFunctionCall(functionCall){
+        const callId = functionCall && functionCall.id ? functionCall.id : uuid();
+        if(this._handledFunctionCallIds.has(callId)) return;
+        this._handledFunctionCallIds.add(callId);
+
+        const args = functionCall.args || {};
+        appendMsg('sys', `🛠️ 收到 Function Calling：${functionCall.name}`);
+        console.log('TODO: 执行本地飞书命令', args);
+
+        const resultPayload = {
+          ok: true,
+          message: '本地飞书占位逻辑已执行，请替换为真实本地命令。',
+          args,
+          finished_at: new Date().toISOString()
+        };
+
+        try{
+          await this._sendFunctionCallResult(functionCall, resultPayload);
+          appendMsg('sys', `✅ Function Calling 已回填：${functionCall.name}`);
+        }catch(err){
+          console.warn('function call result update failed', err);
+          appendMsg('sys', `⚠️ Function Calling 回填失败：${functionCall.name}（${err && err.message ? err.message : err}）`);
+        }
       }
       _commitBotEmotion(){
-        const replyId = this._currentBotMsgId || '';
         const txt = this._currentBotText || '';
         const userText = (this._lastFinalUserText || '').trim();
         if(txt.trim().length>0){
@@ -1896,11 +1926,6 @@
               setMemoryStatus('记忆后端不可用','error');
               setMemorySummary(`记忆同步失败：${err && err.message ? err.message : err}`);
             }
-          });
-        }
-        if(replyId){
-          Array.from(this._triggeredIntentKeys).forEach((key)=>{
-            if(key.startsWith(`${replyId}:`)) this._triggeredIntentKeys.delete(key);
           });
         }
         this._currentBotMsgId = null;
@@ -1949,6 +1974,10 @@
           dialog: {
             bot_name: '豆包',
             system_role: buildSystemRole(this.memoryContext),
+            tools: FUNCTION_CALL_CFG.TOOLS,
+            llm_config: {
+              tools: FUNCTION_CALL_CFG.TOOLS
+            },
             extra: {
               input_mod: 'audio',
               model: '1.2.1.1'   // O2.0 版本
@@ -1967,6 +1996,25 @@
           }
         };
         this._send(EVT.UpdateConfig, jsonPayload(cfg), { hasSession:true });
+      }
+
+      async _sendFunctionCallResult(functionCall, resultPayload){
+        if(!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.sessionStarted){
+          throw new Error('session not ready');
+        }
+        const payload = {
+          command: 'function',
+          function_call: {
+            id: functionCall.id,
+            name: functionCall.name,
+            arguments: functionCall.args || {}
+          },
+          result: {
+            content: JSON.stringify(resultPayload || {}),
+            ok: !!(resultPayload && resultPayload.ok)
+          }
+        };
+        this._send(EVT.UpdateVoiceChat, jsonPayload(payload), { hasSession:true });
       }
 
       _send(event, payloadBytes, opt={}){

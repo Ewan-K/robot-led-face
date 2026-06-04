@@ -5,8 +5,7 @@
   "description": "Local Node.js WebSocket proxy for Doubao realtime speech access",
   "main": "proxy.js",
   "scripts": {
-    "start": "node proxy.js",
-    "intent-bridge": "node intent-bridge.js"
+    "start": "node proxy.js"
   },
   "dependencies": {
     "ws": "^8.18.0"

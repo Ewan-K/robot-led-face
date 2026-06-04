@@ -1,13 +1,8 @@
-# 本地 Node.js 代理与意图桥接服务
+# 本地 Node.js WebSocket 代理
 
-这个目录提供两类本地服务：
-
-1. `proxy.js`：本地 WebSocket 代理，解决浏览器在握手阶段无法注入自定义 Header 的问题。
-2. `intent-bridge.js`：本地 HTTP 意图桥接服务，用于接收前端识别到的意图，并执行对应的本地命令。
+这个目录提供本地 WebSocket 代理，用于解决浏览器在握手阶段无法注入自定义 Header 的问题，并承载前端的实时语音 Function Calling 接入示例。
 
 ## 作用
-
-### 1) 语音代理
 
 前端页面连接 `wss://localhost:8765`，本地代理再转发到豆包实时语音服务：
 
@@ -17,21 +12,26 @@
   - `X-Api-Access-Key: 通过环境变量 DOUBAO_ACCESS_KEY 注入`
   - `X-Api-Resource-Id: volc.speech.dialog`
 
-### 2) 意图桥接
+## Function Calling 接入方式
 
-前端在收到 `ChatResponse` 文本流后，会做简单关键词匹配：
+页面在建立语音会话时，会在启动请求中附带 `本地飞书` 工具定义：
 
-- 若文本中包含 `本地飞书`
-- 则会向 `http://127.0.0.1:9989/intent` 发起 `POST` 请求
-- `intent-bridge.js` 收到请求后，会执行本地命令
+- 工具名：`本地飞书`
+- 描述：当用户提到飞书相关操作时调用
+- 参数：`text`（字符串）
 
-当前示例命令为：
+当前前端处理逻辑如下：
 
-```bash
-echo TODO_本地飞书命令
+1. 监听服务端下发的 Function Calling 消息。
+2. 当识别到 `本地飞书` 调用时，先执行本地占位逻辑：
+
+```js
+console.log('TODO: 执行本地飞书命令', args)
 ```
 
-你可以把它替换成真正需要执行的本地 Feishu / Lark 命令。
+3. 随后通过会话更新指令把工具执行结果回填给当前语音会话。
+
+> 说明：当前仓库中本地飞书执行仍为占位实现。你可以把这段逻辑替换成真实的本地 Feishu / Lark 命令或桌面自动化调用。
 
 ## 安装依赖
 
@@ -40,42 +40,23 @@ cd led-emoji-screen
 npm install
 ```
 
-## 启动服务
-
-### 启动 WebSocket 代理
+## 启动代理
 
 ```bash
 DOUBAO_ACCESS_KEY=你的AccessKey npm start
 ```
 
-### 启动意图桥接服务
-
-```bash
-npm run intent-bridge
-```
-
-## 启动成功后的输出
-
-### WebSocket 代理
+启动成功后，控制台会显示：
 
 - `WSS proxy listening on wss://localhost:8765`
 
-### 意图桥接服务
+## 使用说明
 
-- `intent-bridge listening on http://127.0.0.1:9989`
+1. 启动本地 WebSocket 代理。
+2. 启动 Mem0 后端（如果你需要长期记忆能力）。
+3. 用浏览器打开页面并开始语音对话。
+4. 当模型判断用户请求属于飞书相关操作时，会在实时语音链路中直接触发 `本地飞书` 工具调用。
 
-## 健康检查
+## 自定义本地工具执行
 
-```bash
-curl http://127.0.0.1:9989/healthz
-```
-
-## 手动测试意图触发
-
-```bash
-curl -X POST http://127.0.0.1:9989/intent \
-  -H 'Content-Type: application/json' \
-  -d '{"intent":"本地飞书","source_text":"请帮我打开本地飞书"}'
-```
-
-然后再用浏览器打开页面并开始语音对话。若模型回复里出现 `本地飞书`，前端会自动 dispatch 到本地桥接服务。
+如需接入真实本地命令，可在前端页面的 Function Calling 处理逻辑中替换占位代码，并保持回填结果的结构不变，这样语音会话可以继续自然往下进行。
