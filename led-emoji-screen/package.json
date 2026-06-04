@@ -2,10 +2,11 @@
   "name": "led-emoji-screen-proxy",
   "version": "1.0.0",
   "private": true,
-  "description": "Local Node.js WebSocket proxy for Doubao realtime speech access",
+  "description": "Node.js WebSocket proxy for Doubao realtime speech access (local + TCE)",
   "main": "proxy.js",
   "scripts": {
-    "start": "node proxy.js"
+    "start": "node proxy.js",
+    "start:tce": "node proxy-tce.js"
   },
   "dependencies": {
     "ws": "^8.18.0"
