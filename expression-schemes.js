@@ -451,7 +451,20 @@
       };
     }
 
-    function createSchemeTwo(){
+    function createSchemeTwo(config){
+      const schemeConfig = Object.assign({
+        id: 'scheme2',
+        title: '方案二（纯眼睛参考图）',
+        footerText: '12 种预设表情：挑逗、快乐、愤怒、悲伤、焦虑、怀疑、盛赞、倾听、流汗、思考、愉快、抱歉。默认态为“倾听”。',
+        footerHint: '说明：方案二不再模拟 LED 点阵，直接在黑色屏幕区域内用 Canvas 线条重绘 12 种表情。',
+        defaultEmotionId: 'listening',
+        emotionColorOverrides: {},
+        palette: {
+          bg: '#02030a',
+          line: '#ffffff',
+          accent: '#5ce8d0'
+        }
+      }, config || {});
       const EMOTIONS = [
         { id:'flirting', emoji:'😏', label:'挑逗', color:'#f7fbff' },
         { id:'joyful', emoji:'😄', label:'快乐', color:'#f7fbff' },
@@ -465,13 +478,12 @@
         { id:'brooding', emoji:'🤔', label:'思考', color:'#f7fbff' },
         { id:'pleased', emoji:'😌', label:'愉快', color:'#f7fbff' },
         { id:'sorry', emoji:'🥺', label:'抱歉', color:'#f7fbff' }
-      ];
+      ].map((item)=>({
+        ...item,
+        color: schemeConfig.emotionColorOverrides[item.id] || item.color
+      }));
       const EMOTION_BY_ID = Object.fromEntries(EMOTIONS.map((item)=>[item.id, item]));
-      const PALETTE = {
-        bg: '#02030a',
-        line: '#ffffff',
-        accent: '#5ce8d0'
-      };
+      const PALETTE = schemeConfig.palette;
 
       function getScene(){
         const W = canvas.width;
@@ -491,6 +503,12 @@
       }
       function point(scene, x, y){
         return [scene.ox + x * scene.unit, scene.oy + y * scene.unit];
+      }
+      function resolveStrokeColor(emotion){
+        return (emotion && emotion.color) || PALETTE.line;
+      }
+      function resolveAccentColor(emotion){
+        return (emotion && emotion.accentColor) || PALETTE.accent;
       }
       function clearSchemeTwo(scene){
         ctx.clearRect(0, 0, scene.W, scene.H);
@@ -597,96 +615,98 @@
       function topArc(scene, cx, cy, radius, widthScale, color){
         drawArcShape(scene, cx, cy, radius, Math.PI * 0.15, Math.PI * 0.85, widthScale, color);
       }
-      function drawSchemeTwo(emotionId){
+      function drawSchemeTwo(emotionId, t, emotion){
         const scene = getScene();
+        const strokeColor = resolveStrokeColor(emotion);
+        const accentColor = resolveAccentColor(emotion);
         clearSchemeTwo(scene);
         switch(emotionId){
           case 'flirting':
-            drawQuadraticShape(scene, 5.45, 7.0, 6.8, 7.45, 8.45, 7.2, 0.82);
-            drawQuadraticShape(scene, 5.55, 9.85, 7.05, 10.25, 8.6, 10.7, 0.82);
-            drawQuadraticShape(scene, 13.7, 6.95, 15.2, 6.2, 16.9, 7.0, 0.82);
-            drawBezierShape(scene, 13.5, 12.0, 13.7, 9.75, 16.8, 9.6, 16.6, 12.2, 0.82);
+            drawQuadraticShape(scene, 5.45, 7.0, 6.8, 7.45, 8.45, 7.2, 0.82, strokeColor);
+            drawQuadraticShape(scene, 5.55, 9.85, 7.05, 10.25, 8.6, 10.7, 0.82, strokeColor);
+            drawQuadraticShape(scene, 13.7, 6.95, 15.2, 6.2, 16.9, 7.0, 0.82, strokeColor);
+            drawBezierShape(scene, 13.5, 12.0, 13.7, 9.75, 16.8, 9.6, 16.6, 12.2, 0.82, strokeColor);
             break;
           case 'joyful':
-            drawQuadraticShape(scene, 5.8, 7.4, 7.2, 5.9, 8.9, 6.35, 0.82);
-            drawQuadraticShape(scene, 15.1, 6.35, 16.8, 5.9, 18.2, 7.4, 0.82);
-            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.9);
-            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.9);
+            drawQuadraticShape(scene, 5.8, 7.4, 7.2, 5.9, 8.9, 6.35, 0.82, strokeColor);
+            drawQuadraticShape(scene, 15.1, 6.35, 16.8, 5.9, 18.2, 7.4, 0.82, strokeColor);
+            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.9, strokeColor);
+            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.9, strokeColor);
             break;
           case 'angry':
-            drawLineShape(scene, 6.0, 5.5, 9.5, 7.1, 0.88);
-            drawLineShape(scene, 14.0, 7.1, 17.5, 5.5, 0.88);
-            drawCircleShape(scene, 8.0, 12.2, 1.85, 0.92);
-            drawCircleShape(scene, 16.0, 12.2, 1.85, 0.92);
+            drawLineShape(scene, 6.0, 5.5, 9.5, 7.1, 0.88, strokeColor);
+            drawLineShape(scene, 14.0, 7.1, 17.5, 5.5, 0.88, strokeColor);
+            drawCircleShape(scene, 8.0, 12.2, 1.85, 0.92, strokeColor);
+            drawCircleShape(scene, 16.0, 12.2, 1.85, 0.92, strokeColor);
             break;
           case 'sad':
-            drawQuadraticShape(scene, 5.8, 7.5, 7.3, 7.0, 9.1, 6.3, 0.8);
-            drawQuadraticShape(scene, 14.9, 6.3, 16.7, 7.0, 18.2, 7.5, 0.8);
-            drawArcShape(scene, 8.0, 11.4, 1.95, 0, Math.PI, 0.86);
-            drawArcShape(scene, 16.0, 11.4, 1.95, 0, Math.PI, 0.86);
+            drawQuadraticShape(scene, 5.8, 7.5, 7.3, 7.0, 9.1, 6.3, 0.8, strokeColor);
+            drawQuadraticShape(scene, 14.9, 6.3, 16.7, 7.0, 18.2, 7.5, 0.8, strokeColor);
+            drawArcShape(scene, 8.0, 11.4, 1.95, 0, Math.PI, 0.86, strokeColor);
+            drawArcShape(scene, 16.0, 11.4, 1.95, 0, Math.PI, 0.86, strokeColor);
             drawDropShape(scene, 4.9, 14.5, 0.72, '#66FFFF');
             break;
           case 'anxious':
-            drawQuadraticShape(scene, 5.9, 7.5, 7.6, 7.0, 9.5, 6.7, 0.82);
-            drawQuadraticShape(scene, 14.5, 6.7, 16.4, 7.0, 18.1, 7.5, 0.82);
-            drawCircleShape(scene, 8.0, 12.15, 1.94, 0.9);
-            drawCircleShape(scene, 16.0, 12.15, 1.94, 0.9);
+            drawQuadraticShape(scene, 5.9, 7.5, 7.6, 7.0, 9.5, 6.7, 0.82, strokeColor);
+            drawQuadraticShape(scene, 14.5, 6.7, 16.4, 7.0, 18.1, 7.5, 0.82, strokeColor);
+            drawCircleShape(scene, 8.0, 12.15, 1.94, 0.9, strokeColor);
+            drawCircleShape(scene, 16.0, 12.15, 1.94, 0.9, strokeColor);
             break;
           case 'sceptical':
-            topArc(scene, 8.0, 6.35, 1.55, 0.82);
-            drawLineShape(scene, 14.3, 7.9, 17.9, 7.2, 0.8);
-            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9);
-            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
-            topArc(scene, 7.55, 10.05, 0.62, 0.52);
+            topArc(scene, 8.0, 6.35, 1.55, 0.82, strokeColor);
+            drawLineShape(scene, 14.3, 7.9, 17.9, 7.2, 0.8, strokeColor);
+            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9, strokeColor);
+            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9, strokeColor);
+            topArc(scene, 7.55, 10.05, 0.62, 0.52, strokeColor);
             break;
           case 'bright':
-            drawQuadraticShape(scene, 5.8, 7.4, 7.2, 5.9, 8.9, 6.35, 0.82);
-            drawQuadraticShape(scene, 15.1, 6.35, 16.8, 5.9, 18.2, 7.4, 0.82);
-            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.9);
-            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.9);
-            drawLineShape(scene, 9.3, 3.7, 8.5, 1.9, 0.58, '#73EAF9');
-            drawLineShape(scene, 12.0, 3.35, 12.0, 1.15, 0.58, '#73EAF9');
-            drawLineShape(scene, 14.7, 3.7, 15.5, 1.9, 0.58, '#73EAF9');
+            drawQuadraticShape(scene, 5.8, 7.4, 7.2, 5.9, 8.9, 6.35, 0.82, strokeColor);
+            drawQuadraticShape(scene, 15.1, 6.35, 16.8, 5.9, 18.2, 7.4, 0.82, strokeColor);
+            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.9, strokeColor);
+            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.9, strokeColor);
+            drawLineShape(scene, 9.3, 3.7, 8.5, 1.9, 0.58, accentColor);
+            drawLineShape(scene, 12.0, 3.35, 12.0, 1.15, 0.58, accentColor);
+            drawLineShape(scene, 14.7, 3.7, 15.5, 1.9, 0.58, accentColor);
             break;
           case 'listening':
-            drawLineShape(scene, 6.4, 7.2, 9.6, 7.2, 0.8);
-            drawLineShape(scene, 14.4, 7.2, 17.6, 7.2, 0.8);
-            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9);
-            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
+            drawLineShape(scene, 6.4, 7.2, 9.6, 7.2, 0.8, strokeColor);
+            drawLineShape(scene, 14.4, 7.2, 17.6, 7.2, 0.8, strokeColor);
+            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9, strokeColor);
+            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9, strokeColor);
             break;
           case 'sweating':
-            drawQuadraticShape(scene, 5.8, 7.4, 7.2, 5.9, 8.9, 6.35, 0.82);
-            drawQuadraticShape(scene, 15.1, 6.35, 16.8, 5.9, 18.2, 7.4, 0.82);
-            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.9);
-            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.9);
+            drawQuadraticShape(scene, 5.8, 7.4, 7.2, 5.9, 8.9, 6.35, 0.82, strokeColor);
+            drawQuadraticShape(scene, 15.1, 6.35, 16.8, 5.9, 18.2, 7.4, 0.82, strokeColor);
+            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.9, strokeColor);
+            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.9, strokeColor);
             drawRotatedDrop(scene, 19.05, 10.95, 0.62, -42, '#66E6FF');
             drawRotatedDrop(scene, 18.25, 14.2, 0.7, -52, '#66E6FF');
             break;
           case 'brooding':
-            drawQuadraticShape(scene, 5.8, 6.7, 7.9, 6.0, 10.1, 6.45, 0.9);
-            drawQuadraticShape(scene, 13.9, 6.45, 16.0, 6.8, 18.2, 6.2, 0.9);
-            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9);
-            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
+            drawQuadraticShape(scene, 5.8, 6.7, 7.9, 6.0, 10.1, 6.45, 0.9, strokeColor);
+            drawQuadraticShape(scene, 13.9, 6.45, 16.0, 6.8, 18.2, 6.2, 0.9, strokeColor);
+            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9, strokeColor);
+            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9, strokeColor);
             fillCircleShape(scene, 8.55, 11.45, 0.55, PALETTE.bg);
             fillCircleShape(scene, 16.55, 11.45, 0.55, PALETTE.bg);
             break;
           case 'pleased':
-            drawQuadraticShape(scene, 5.9, 6.95, 7.9, 6.25, 10.0, 6.9, 0.8);
-            drawQuadraticShape(scene, 14.0, 6.9, 16.1, 6.25, 18.1, 6.95, 0.8);
-            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.92);
-            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.92);
+            drawQuadraticShape(scene, 5.9, 6.95, 7.9, 6.25, 10.0, 6.9, 0.8, strokeColor);
+            drawQuadraticShape(scene, 14.0, 6.9, 16.1, 6.25, 18.1, 6.95, 0.8, strokeColor);
+            drawArcShape(scene, 8.1, 12.1, 2.15, Math.PI, 0, 0.92, strokeColor);
+            drawArcShape(scene, 15.9, 12.1, 2.15, Math.PI, 0, 0.92, strokeColor);
             break;
           case 'sorry':
-            drawQuadraticShape(scene, 6.0, 7.7, 7.3, 7.35, 8.9, 6.55, 0.78);
-            drawQuadraticShape(scene, 15.1, 6.55, 16.7, 7.35, 18.0, 7.7, 0.78);
-            drawCircleShape(scene, 8.0, 12.2, 1.58, 0.82);
-            drawCircleShape(scene, 16.0, 12.2, 1.58, 0.82);
+            drawQuadraticShape(scene, 6.0, 7.7, 7.3, 7.35, 8.9, 6.55, 0.78, strokeColor);
+            drawQuadraticShape(scene, 15.1, 6.55, 16.7, 7.35, 18.0, 7.7, 0.78, strokeColor);
+            drawCircleShape(scene, 8.0, 12.2, 1.58, 0.82, strokeColor);
+            drawCircleShape(scene, 16.0, 12.2, 1.58, 0.82, strokeColor);
             break;
           default:
-            drawLineShape(scene, 6.4, 7.2, 9.6, 7.2, 0.8);
-            drawLineShape(scene, 14.4, 7.2, 17.6, 7.2, 0.8);
-            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9);
-            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9);
+            drawLineShape(scene, 6.4, 7.2, 9.6, 7.2, 0.8, strokeColor);
+            drawLineShape(scene, 14.4, 7.2, 17.6, 7.2, 0.8, strokeColor);
+            drawCircleShape(scene, 8.0, 12.1, 1.88, 0.9, strokeColor);
+            drawCircleShape(scene, 16.0, 12.1, 1.88, 0.9, strokeColor);
         }
       }
 
@@ -750,11 +770,11 @@
       }
 
       return {
-        id: 'scheme2',
-        title: '方案二（纯眼睛参考图）',
-        footerText: '12 种预设表情：挑逗、快乐、愤怒、悲伤、焦虑、怀疑、盛赞、倾听、流汗、思考、愉快、抱歉。默认态为“倾听”。',
-        footerHint: '说明：方案二不再模拟 LED 点阵，直接在黑色屏幕区域内用 Canvas 线条重绘 12 种表情。',
-        defaultEmotionId: 'listening',
+        id: schemeConfig.id,
+        title: schemeConfig.title,
+        footerText: schemeConfig.footerText,
+        footerHint: schemeConfig.footerHint,
+        defaultEmotionId: schemeConfig.defaultEmotionId,
         emotions: EMOTIONS,
         emotionById: EMOTION_BY_ID,
         examples,
@@ -765,7 +785,18 @@
 
     const SCHEMES = {
       scheme1: createSchemeOne(),
-      scheme2: createSchemeTwo()
+      scheme2: createSchemeTwo(),
+      scheme3: createSchemeTwo({
+        id: 'scheme3',
+        title: '方案三（纯眼睛柔和情绪色）',
+        footerText: '基于方案二的纯眼睛结构，保留 12 种预设表情，并为愤怒/快乐/倾听注入更柔和的情绪色彩。默认态为“倾听”。',
+        footerHint: '说明：方案三延续方案二的线条轮廓，仅将愤怒调整为淡红、快乐调整为淡绿、倾听调整为淡蓝，其余表情保持原有风格。',
+        emotionColorOverrides: {
+          angry: '#ffb3b8',
+          joyful: '#b9f3c4',
+          listening: '#b8e9ff'
+        }
+      })
     };
 
     let activeScheme = SCHEMES.scheme2;
@@ -796,9 +827,17 @@
       confuse: '#ff8df2',
       wink: '#ff77de'
     };
+    const SCHEME_GLOW_OVERRIDES = {
+      scheme3: {
+        angry: '#ffb3b8',
+        joyful: '#b9f3c4',
+        listening: '#b8e9ff'
+      }
+    };
 
     function resolveGlowColor(id, emotion){
-      return GLOW_BY_ID[id] || (emotion && emotion.color) || '#18f7ff';
+      const schemeGlow = SCHEME_GLOW_OVERRIDES[activeScheme.id] || {};
+      return schemeGlow[id] || GLOW_BY_ID[id] || (emotion && emotion.color) || '#18f7ff';
     }
 
     function applyGlowColor(color){
@@ -845,13 +884,16 @@
 
     function chooseScheme(forcePrompt){
       const saved = window.localStorage.getItem(STORAGE_KEY);
-      if(!forcePrompt && (saved === 'scheme1' || saved === 'scheme2')) return saved;
-      const defaultInput = saved === 'scheme1' ? '1' : '2';
+      if(!forcePrompt && (saved === 'scheme1' || saved === 'scheme2' || saved === 'scheme3')) return saved;
+      const defaultInput = saved === 'scheme1' ? '1' : (saved === 'scheme3' ? '3' : '2');
       const answer = window.prompt(
-        '请选择表情方案：\n1 = 方案一（保留当前实现）\n2 = 方案二（参考图纯眼睛版）',
+        '请选择表情方案：\n1 = 方案一（保留当前实现）\n2 = 方案二（参考图纯眼睛版）\n3 = 方案三（方案二柔和情绪色版）',
         defaultInput
       );
-      return String(answer || '').trim() === '1' ? 'scheme1' : 'scheme2';
+      const normalized = String(answer || '').trim();
+      if(normalized === '1') return 'scheme1';
+      if(normalized === '3') return 'scheme3';
+      return 'scheme2';
     }
 
     function setEmotion(id){
