@@ -345,10 +345,11 @@
     }
 
     .bgFxCanvas{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
+      position:fixed;
+      top:0;
+      left:0;
+      width:100vw;
+      height:100vh;
       z-index:0;
       pointer-events:none;
       opacity:.72;
@@ -779,11 +780,9 @@
     let bgFxHeight = 0;
 
     function getBackgroundFxSize(){
-      const doc = document.documentElement;
-      const bodyEl = document.body;
       return {
-        width: Math.max(window.innerWidth, doc.clientWidth, doc.scrollWidth, bodyEl.scrollWidth),
-        height: Math.max(window.innerHeight, doc.clientHeight, doc.scrollHeight, bodyEl.scrollHeight)
+        width: window.innerWidth,
+        height: window.innerHeight
       };
     }
 
@@ -825,16 +824,13 @@
       bgFxCtx.setTransform(1, 0, 0, 1, 0, 0);
       bgFxCtx.scale(dpr, dpr);
       seedParticles(bgFxWidth, bgFxHeight);
+      drawBackgroundFx();
     }
     window.addEventListener('resize', resize);
     window.addEventListener('load', resize);
     resize();
 
     function drawBackgroundFx(){
-      const size = getBackgroundFxSize();
-      if(size.width !== bgFxWidth || size.height !== bgFxHeight){
-        resize();
-      }
       const width = bgFxWidth;
       const height = bgFxHeight;
       bgFxCtx.clearRect(0, 0, width, height);
@@ -1116,7 +1112,6 @@
     });
 
     function tick(t){
-      drawBackgroundFx(t);
       emotionRuntime.tick(t);
       requestAnimationFrame(tick);
     }
