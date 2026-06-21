@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -22,7 +23,7 @@ sanitize_no_proxy()
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from mem0 import AsyncMemory
+from mem0 import Memory
 
 
 logging.basicConfig(
@@ -170,7 +171,7 @@ class MemorySearchRequest(BaseModel):
 class MemoryService:
     def __init__(self) -> None:
         self.config = build_mem0_config()
-        self.memory = AsyncMemory.from_config(self.config)
+        self.memory = Memory.from_config(self.config)
         self.default_infer = env_bool("MEM0_INFER", False)
         self.max_summary_chars = int(os.getenv("MEM0_SUMMARY_MAX_CHARS", "1200"))
         logger.info(
@@ -179,6 +180,10 @@ class MemoryService:
             self.config["embedder"]["provider"],
             self.default_infer,
         )
+
+    async def _run_blocking(self, fn, *args, **kwargs):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: fn(*args, **kwargs))
 
     async def add_turn(self, payload: MemoryAddRequest) -> Dict[str, Any]:
         infer = self.default_infer if payload.infer is None else payload.infer
@@ -190,7 +195,13 @@ class MemoryService:
             {"role": "user", "content": payload.user_text.strip()},
             {"role": "assistant", "content": payload.bot_text.strip()},
         ]
-        result = await self.memory.add(messages, user_id=payload.user_id, metadata=metadata, infer=infer)
+        result = await self._run_blocking(
+            self.memory.add,
+            messages,
+            user_id=payload.user_id,
+            metadata=metadata,
+            infer=infer,
+        )
         return {
             "ok": True,
             "infer": infer,
@@ -203,9 +214,9 @@ class MemoryService:
         query = payload.query.strip()
 
         if query:
-            result = await self.memory.search(query, filters=filters, top_k=payload.top_k)
+            result = await self._run_blocking(self.memory.search, query, filters=filters, top_k=payload.top_k)
         else:
-            result = await self.memory.get_all(filters=filters, top_k=payload.top_k)
+            result = await self._run_blocking(self.memory.get_all, filters=filters, top_k=payload.top_k)
 
         memories = result.get("results", [])
         summary = self._build_summary(memories, query=query)
@@ -218,7 +229,7 @@ class MemoryService:
         }
 
     async def get_all_memories(self, user_id: str, top_k: int) -> Dict[str, Any]:
-        result = await self.memory.get_all(filters={"user_id": user_id}, top_k=top_k)
+        result = await self._run_blocking(self.memory.get_all, filters={"user_id": user_id}, top_k=top_k)
         memories = result.get("results", [])
         return {
             "ok": True,
