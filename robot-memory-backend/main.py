@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -174,16 +175,58 @@ class MemoryService:
         self.memory = Memory.from_config(self.config)
         self.default_infer = env_bool("MEM0_INFER", False)
         self.max_summary_chars = int(os.getenv("MEM0_SUMMARY_MAX_CHARS", "1200"))
+        self._add_params = set(inspect.signature(self.memory.add).parameters)
+        self._search_params = set(inspect.signature(self.memory.search).parameters)
+        self._get_all_params = set(inspect.signature(self.memory.get_all).parameters)
         logger.info(
-            "Mem0 initialized | vector=%s | embedder=%s | infer=%s",
+            "Mem0 initialized | vector=%s | embedder=%s | infer=%s | add_params=%s",
             self.config["vector_store"]["provider"],
             self.config["embedder"]["provider"],
             self.default_infer,
+            sorted(self._add_params),
         )
 
     async def _run_blocking(self, fn, *args, **kwargs):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, lambda: fn(*args, **kwargs))
+
+    def _normalize_items(self, result: Any) -> List[Dict[str, Any]]:
+        if isinstance(result, list):
+            return result
+        if isinstance(result, dict):
+            if isinstance(result.get("results"), list):
+                return result["results"]
+            if isinstance(result.get("memories"), list):
+                return result["memories"]
+        return []
+
+    def _legacy_add_raw_messages(self, messages: List[Dict[str, str]], user_id: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        create_memory = getattr(self.memory, "_create_memory_tool", None)
+        if not callable(create_memory):
+            raise RuntimeError("当前 mem0 版本不支持 infer=False 所需的兼容写入路径。")
+
+        results: List[Dict[str, Any]] = []
+        for message in messages:
+            role = (message.get("role") or "memory").strip() or "memory"
+            content = (message.get("content") or "").strip()
+            if not content:
+                continue
+            item_metadata = {
+                **metadata,
+                "user_id": user_id,
+                "role": role,
+            }
+            memory_id = create_memory(content, metadata=item_metadata)
+            results.append(
+                {
+                    "id": memory_id,
+                    "memory": content,
+                    "event": "ADD",
+                    "role": role,
+                    "metadata": item_metadata,
+                }
+            )
+        return {"results": results}
 
     async def add_turn(self, payload: MemoryAddRequest) -> Dict[str, Any]:
         infer = self.default_infer if payload.infer is None else payload.infer
@@ -195,30 +238,39 @@ class MemoryService:
             {"role": "user", "content": payload.user_text.strip()},
             {"role": "assistant", "content": payload.bot_text.strip()},
         ]
-        result = await self._run_blocking(
-            self.memory.add,
-            messages,
-            user_id=payload.user_id,
-            metadata=metadata,
-            infer=infer,
-        )
+
+        if "infer" not in self._add_params and not infer:
+            result = await self._run_blocking(self._legacy_add_raw_messages, messages, payload.user_id, metadata)
+        else:
+            add_payload: Any = messages
+            if "infer" not in self._add_params:
+                add_payload = "\n".join(f"{item['role']}: {item['content']}" for item in messages if item.get("content"))
+
+            add_kwargs: Dict[str, Any] = {
+                "user_id": payload.user_id,
+                "metadata": metadata,
+            }
+            if "infer" in self._add_params:
+                add_kwargs["infer"] = infer
+            result = await self._run_blocking(self.memory.add, add_payload, **add_kwargs)
+
+        items = self._normalize_items(result)
         return {
             "ok": True,
             "infer": infer,
-            "stored_count": len(result.get("results", [])),
-            "results": result.get("results", []),
+            "stored_count": len(items),
+            "results": items,
         }
 
     async def search_memories(self, payload: MemorySearchRequest) -> Dict[str, Any]:
-        filters = {"user_id": payload.user_id}
         query = payload.query.strip()
 
         if query:
-            result = await self._run_blocking(self.memory.search, query, filters=filters, limit=payload.top_k)
+            result = await self._run_blocking(self.memory.search, query, user_id=payload.user_id, limit=payload.top_k)
         else:
-            result = await self._run_blocking(self.memory.get_all, filters=filters, limit=payload.top_k)
+            result = await self._run_blocking(self.memory.get_all, user_id=payload.user_id, limit=payload.top_k)
 
-        memories = result.get("results", [])
+        memories = self._normalize_items(result)
         summary = self._build_summary(memories, query=query)
         return {
             "ok": True,
@@ -229,8 +281,8 @@ class MemoryService:
         }
 
     async def get_all_memories(self, user_id: str, top_k: int) -> Dict[str, Any]:
-        result = await self._run_blocking(self.memory.get_all, filters={"user_id": user_id}, limit=top_k)
-        memories = result.get("results", [])
+        result = await self._run_blocking(self.memory.get_all, user_id=user_id, limit=top_k)
+        memories = self._normalize_items(result)
         return {
             "ok": True,
             "count": len(memories),
