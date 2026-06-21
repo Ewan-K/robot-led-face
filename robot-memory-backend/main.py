@@ -214,9 +214,9 @@ class MemoryService:
         query = payload.query.strip()
 
         if query:
-            result = await self._run_blocking(self.memory.search, query, filters=filters, top_k=payload.top_k)
+            result = await self._run_blocking(self.memory.search, query, filters=filters, limit=payload.top_k)
         else:
-            result = await self._run_blocking(self.memory.get_all, filters=filters, top_k=payload.top_k)
+            result = await self._run_blocking(self.memory.get_all, filters=filters, limit=payload.top_k)
 
         memories = result.get("results", [])
         summary = self._build_summary(memories, query=query)
@@ -229,7 +229,7 @@ class MemoryService:
         }
 
     async def get_all_memories(self, user_id: str, top_k: int) -> Dict[str, Any]:
-        result = await self._run_blocking(self.memory.get_all, filters={"user_id": user_id}, top_k=top_k)
+        result = await self._run_blocking(self.memory.get_all, filters={"user_id": user_id}, limit=top_k)
         memories = result.get("results", [])
         return {
             "ok": True,
