@@ -734,7 +734,7 @@
         <div class="transcript" id="transcript" aria-live="polite"></div>
 
         <div class="voiceHint">
-          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>，页面会先连接本地代理 <code>wss://localhost:8765</code>，再由代理转发到云端服务；页面还会访问本地记忆后端 <code>http://127.0.0.1:8766</code> 做长期记忆检索与存储，并在语音链路内直接接收服务端下发的 Function Calling 工具调用。<br/>
+          🎙️ 实时语音对话基于火山引擎 <code>豆包端到端实时语音大模型</code>，页面会先连接本地代理 <code>wss://localhost:8765</code>，再由代理转发到云端服务；页面还会访问本地记忆后端 <code>https://127.0.0.1:8766</code> 做长期记忆检索与存储，并在语音链路内直接接收服务端下发的 Function Calling 工具调用。<br/>
           <span class="tiny">提示：请先启动本地 Node.js WebSocket 代理和 Mem0 后端，再打开当前页面；浏览器需要授权麦克风权限；首次连接可能需要几秒。</span>
         </div>
       </section>
@@ -1184,7 +1184,7 @@
 
     const MEMORY_CFG = {
       ENABLED: true,
-      API_URL: 'http://127.0.0.1:8766',
+      API_URL: 'https://127.0.0.1:8766',
       USER_ID: getOrInitUID(),
       SEARCH_TOP_K: 5
     };
